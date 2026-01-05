@@ -4,28 +4,33 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ระบบตรวจสอบเกรด - คะแนน</title>
-    <link rel="icon" type="image/png" href="favicon.PNG"> 
     
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.tailwindcss.com">
+    <link rel="preconnect" href="https://unpkg.com">
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    <link rel="preconnect" href="https://www.gstatic.com">
+
+    <link rel="icon" type="image/png" href="favicon.PNG"> 
     <link rel="shortcut icon" type="image/x-icon" href="favicon 2.ico"> 
     <link rel="apple-touch-icon" href="favocon.PNG">
     <link rel="apple-touch-icon" sizes="180x180" href="favicon.PNGg">
+    
     <meta property="og:title" content="ระบบตรวจสอบเกรด และคะแนน" />
     <meta property="og:description" content="เว็บไซต์สำหรับตรวจสอบเกรด และคะแนน | พัฒนาโดย นายณัฐพงศ์ ขาวนุ้ย" />
     <meta property="og:image" content="https://img2.pic.in.th/pic/ogimg.png" />
     <meta property="og:url" content="https://natt-k.github.io/score" />
-    <meta property="og:type" content="website" /> <!-- หรือ article, product, etc. -->
-    
-    <!-- Fonts -->
+    <meta property="og:type" content="website" />
+
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&family=Sarabun:wght@400;600&display=swap" rel="stylesheet">
-    <!-- Icons -->
+    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Vue 3 -->
-    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,line-clamp"></script>
+
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
     
-    <!-- Firebase JS SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -85,27 +90,42 @@
         .btn-base:hover { transform: scale(1.02); filter: brightness(1.05); }
         .btn-base:active { transform: scale(0.98); }
 
-        .btn-primary { background: linear-gradient(135deg, var(--primary), #1d4ed8); color: white; box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3); }
-        .btn-secondary { background: white; color: var(--text-main); border: 1px solid #e2e8f0; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
+        .btn-primary { background: linear-gradient(135deg, var(--primary), #1d4ed8); color: white;
+            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3); }
+        .btn-secondary { background: white;
+            color: var(--text-main); border: 1px solid #e2e8f0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
         .btn-secondary:hover { background: #f8fafc; border-color: #cbd5e1; }
-        .btn-green { background: linear-gradient(135deg, #10b981, #059669); color: white; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3); }
-        .btn-orange { background: linear-gradient(135deg, #f97316, #ea580c); color: white; box-shadow: 0 4px 15px rgba(249, 115, 22, 0.3); }
-        .btn-purple { background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: white; box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3); }
-        .btn-red-outline { background: white; color: #ef4444; border: 1px solid #fee2e2; }
+        .btn-green { background: linear-gradient(135deg, #10b981, #059669);
+            color: white; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3); }
+        .btn-orange { background: linear-gradient(135deg, #f97316, #ea580c);
+            color: white; box-shadow: 0 4px 15px rgba(249, 115, 22, 0.3); }
+        .btn-purple { background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: white;
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3); }
+        .btn-red-outline { background: white;
+            color: #ef4444; border: 1px solid #fee2e2; }
         .btn-red-outline:hover { background: #fef2f2; border-color: #fca5a5; }
 
         /* Inputs */
         .input-rounded {
-            background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 50px; padding: 0.7rem 1.2rem; width: 100%; transition: all 0.3s; outline: none; font-size: 0.95rem; color: #334155;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 50px; padding: 0.7rem 1.2rem; width: 100%; transition: all 0.3s; outline: none; font-size: 0.95rem; color: #334155;
         }
-        .input-rounded:focus { background: white; border-color: var(--primary); box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1); }
+        .input-rounded:focus { background: white; border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1); }
         .input-rounded:disabled { background: #f1f5f9; cursor: not-allowed; color: #94a3b8; }
 
         /* Sheet Table */
-        .sheet-wrapper { border-radius: 16px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02); }
-        .sheet-table th { background-color: #f1f5f9; font-weight: 600; color: #475569; padding: 12px 8px; border-bottom: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
-        .sheet-table td { border-bottom: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; padding: 4px; }
-        .input-cell { width: 100%; text-align: center; padding: 6px; border-radius: 6px; border: 1px solid transparent; font-weight: 500; color: #334155; transition: all 0.2s; }
+        .sheet-wrapper { border-radius: 16px; overflow: hidden;
+            border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02); }
+        .sheet-table th { background-color: #f1f5f9;
+            font-weight: 600; color: #475569; padding: 12px 8px; border-bottom: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; font-size: 0.8rem; text-transform: uppercase;
+            letter-spacing: 0.05em; }
+        .sheet-table td { border-bottom: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0;
+            padding: 4px; }
+        .input-cell { width: 100%; text-align: center; padding: 6px; border-radius: 6px;
+            border: 1px solid transparent; font-weight: 500; color: #334155; transition: all 0.2s; }
         .input-cell:focus { background: #eef2ff; border-color: #818cf8; color: #1e40af; outline: none; }
         .input-cell:hover:not(:focus) { background: #f8fafc; }
 
@@ -122,6 +142,7 @@
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
     </style>
 </head>
+
 <body class="min-h-screen flex flex-col">
 
 <div id="app" class="flex flex-col min-h-screen">
