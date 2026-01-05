@@ -28,7 +28,7 @@
     <!-- Firebase JS SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js" defer></script>
 
     <style>
         :root {
@@ -702,8 +702,23 @@
 <script>
     document.getElementById('year').textContent = new Date().getFullYear();
     const firebaseConfig = { apiKey: "AIzaSyASJrqRxgvOC5q1IXu2t_wqgkGMnq02OZ8", authDomain: "score-spt.firebaseapp.com", projectId: "score-spt", storageBucket: "score-spt.firebasestorage.app", messagingSenderId: "104416668462", appId: "1:104416668462:web:b7e5e9b80c542f797c28bf" };
-    try { firebase.initializeApp(firebaseConfig); } catch(e) { console.error("Firebase Init Error", e); }
-    const db = firebase.firestore(); const auth = firebase.auth(); const APP_ID = 'score-spt-enterprise-super-admin-fixed-v2';
+    try { 
+    firebase.initializeApp(firebaseConfig); 
+} catch(e) { 
+    console.error("Firebase Init Error", e);
+} 
+
+// [แก้ไข] เปิดใช้งาน Offline Persistence
+const db = firebase.firestore();
+db.enablePersistence()
+  .catch((err) => {
+      if (err.code == 'failed-precondition') {
+          console.log('เปิดหลาย Tab เกินไป ทำให้ Offline Mode ไม่ทำงาน');
+      } else if (err.code == 'unimplemented') {
+          console.log('Browser ไม่รองรับ Offline Mode');
+      }
+  });
+ const auth = firebase.auth(); const APP_ID = 'score-spt-enterprise-super-admin-fixed-v2';
     const { createApp, ref, reactive, computed, onMounted } = Vue;
 
     createApp({
