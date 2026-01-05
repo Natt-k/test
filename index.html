@@ -712,7 +712,22 @@
     document.getElementById('year').textContent = new Date().getFullYear();
     const firebaseConfig = { apiKey: "AIzaSyASJrqRxgvOC5q1IXu2t_wqgkGMnq02OZ8", authDomain: "score-spt.firebaseapp.com", projectId: "score-spt", storageBucket: "score-spt.firebasestorage.app", messagingSenderId: "104416668462", appId: "1:104416668462:web:b7e5e9b80c542f797c28bf" };
     try { firebase.initializeApp(firebaseConfig); } catch(e) { console.error("Firebase Init Error", e); }
-    const db = firebase.firestore(); const auth = firebase.auth(); const APP_ID = 'score-spt-enterprise-super-admin-fixed-v2';
+            // ----------------------------------------------------
+        // [แก้] เปิดใช้งาน Offline Persistence เพื่อให้โหลดเร็ว
+        // ----------------------------------------------------
+        const db = firebase.firestore();
+        
+        // สั่งให้จำข้อมูลไว้ในเครื่อง (Cache)
+        db.enablePersistence({ synchronizeTabs: true })
+            .catch((err) => {
+                if (err.code == 'failed-precondition') {
+                    console.log('เปิดหลายแท็บเกินไป ระบบจำข้อมูลเลยปิด');
+                } else if (err.code == 'unimplemented') {
+                    console.log('Browser นี้ไม่รองรับระบบจำข้อมูล');
+                }
+            });
+        // ----------------------------------------------------
+ const auth = firebase.auth(); const APP_ID = 'score-spt-enterprise-super-admin-fixed-v2';
     const { createApp, ref, reactive, computed, onMounted } = Vue;
 
     createApp({
