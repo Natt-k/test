@@ -887,35 +887,52 @@
             const logout = () => { auth.signOut(); goHome(); };
             const handleLogin = async () => { loading.value = true; try { await auth.signInWithEmailAndPassword(loginForm.email, loginForm.password); view.value = 'admin_rooms'; } catch(e) { alert('Login Failed'); loading.value = false; } };
             const enterRoom = (room) => { currentRoom.value = room; view.value = 'admin_students'; };
-            const searchStudent = async () => {
+                        const searchStudent = async () => {
                 loading.value = true;
                 loadingText.value = 'กำลังค้นหาข้อมูล...';
+                studentResult.value = null; // เคลียร์ค่าเก่าก่อน
                 
                 try {
-                    // [เทคนิค] ใช้ .where() เพื่อดึงมาแค่คนเดียว ไม่ดึงทั้งหมด
-                    // และใช้ .limit(1) เพื่อบอกว่าเจอคนเดียวก็พอแล้วไม่ต้องหาต่อ
-                    const snapshot = await db.collection('students')
-                                            .where('studentId', '==', searchId.value)
+                    const idStr = String(searchId.value).trim(); // แปลงเป็นข้อความ
+                    const idNum = Number(idStr); // แปลงเป็นตัวเลข (เผื่อใน DB เก็บเป็นตัวเลข)
+
+                    // 1. ลองค้นหาแบบข้อความ (String) ก่อน
+                    let snapshot = await db.collection('students')
+                                            .where('studentId', '==', idStr)
                                             .limit(1) 
                                             .get();
 
+                    // 2. ถ้าไม่เจอ และค่าที่กรอกเป็นตัวเลขได้ -> ลองค้นหาแบบตัวเลข (Number)
+                    if (snapshot.empty && !isNaN(idNum)) {
+                        snapshot = await db.collection('students')
+                                            .where('studentId', '==', idNum)
+                                            .limit(1) 
+                                            .get();
+                    }
+
                     if (snapshot.empty) {
-                        alert('ไม่พบข้อมูลนักเรียนเลขนี้');
-                        studentResult.value = null;
+                        alert('ไม่พบข้อมูลนักเรียนเลขนี้: ' + idStr);
                     } else {
-                        // เจอข้อมูลแล้ว เอามาใส่ตัวแปร
+                        // เจอข้อมูล
                         studentResult.value = snapshot.docs[0].data();
-                        
-                        // ถ้าอยากให้โหลดรูปหรือข้อมูลย่อยๆ เร็วขึ้น ให้ดึงเฉพาะที่จำเป็น
                         view.value = 'result';
+                        // อัปเดต URL
+                        if(typeof updateUrlHash === 'function') updateUrlHash(); 
                     }
                 } catch (error) {
-                    console.error("Error loading:", error);
-                    alert('เกิดข้อผิดพลาดในการโหลดข้อมูล');
+                    console.error("Error Detail:", error); // ดู Error เต็มๆ ใน Console F12
+                    
+                    // เช็คว่าเป็นเรื่อง Index หรือไม่
+                    if (error.message && error.message.includes('index')) {
+                        alert('ระบบแจ้งเตือน: จำเป็นต้องสร้าง Index ใน Firebase Console (กรุณากด F12 เพื่อคลิกลิงก์สร้าง Index)');
+                    } else {
+                        alert('เกิดข้อผิดพลาด: ' + error.message);
+                    }
                 } finally {
                     loading.value = false;
                 }
             };
+
 
 
             const toggleSubject = (s) => { if(studentResult.value) studentResult.value.subjects.forEach(sub => sub.expanded = false); s.expanded = !s.expanded; };
