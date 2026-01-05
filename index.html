@@ -747,21 +747,7 @@
                     }
                 });
             });
-const focusNextRow = (event, rowIndex, colIndex) => {
-    // หา tr ถัดไป
-    const currentInput = event.target;
-    const currentTr = currentInput.closest('tr');
-    const nextTr = currentTr.nextElementSibling;
-    
-    if (nextTr) {
-        // หา input ในคอลัมน์เดิมของแถวถัดไป
-        const inputs = nextTr.querySelectorAll('input.input-cell');
-        if (inputs[colIndex]) {
-            inputs[colIndex].focus();
-            inputs[colIndex].select(); // เลือกข้อความทั้งหมดเพื่อให้พิมพ์ทับได้เลย
-        }
-    }
-};
+
 
 // อย่าลืมใส่ focusNextRow ใน return { ... } ที่ด้านล่างสุดของ script ด้วยครับ
 
