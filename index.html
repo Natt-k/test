@@ -887,7 +887,7 @@
             const logout = () => { auth.signOut(); goHome(); };
             const handleLogin = async () => { loading.value = true; try { await auth.signInWithEmailAndPassword(loginForm.email, loginForm.password); view.value = 'admin_rooms'; } catch(e) { alert('Login Failed'); loading.value = false; } };
             const enterRoom = (room) => { currentRoom.value = room; view.value = 'admin_students'; };
-                        const searchStudent = async () => {
+            const searchStudent = async () => {
                 loading.value = true;
                 loadingText.value = 'กำลังค้นหาข้อมูล...';
                 
