@@ -1,0 +1,1290 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบตรวจสอบเกรด - คะแนน</title>
+    <link rel="icon" type="image/png" href="favicon.PNG"> 
+    
+    <link rel="shortcut icon" type="image/x-icon" href="favicon 2.ico"> 
+    <link rel="apple-touch-icon" href="favocon.PNG">
+    <link rel="apple-touch-icon" sizes="180x180" href="favicon.PNGg">
+    <meta property="og:title" content="ระบบตรวจสอบเกรด และคะแนน" />
+    <meta property="og:description" content="เว็บไซต์สำหรับตรวจสอบเกรด และคะแนน | พัฒนาโดย นายณัฐพงศ์ ขาวนุ้ย" />
+    <meta property="og:image" content="https://img2.pic.in.th/pic/ogimg.png" />
+    <meta property="og:url" content="https://natt-k.github.io/score" />
+    <meta property="og:type" content="website" /> <!-- หรือ article, product, etc. -->
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&family=Sarabun:wght@400;600&display=swap" rel="stylesheet">
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Vue 3 -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    
+    <!-- Firebase JS SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-light: #60a5fa;
+            --bg-color: #f3f6fd;
+            --surface: #ffffff;
+            --text-main: #1e293b;
+        }
+
+        body {
+            font-family: 'Prompt', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Ultimate Glass Style */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(12px);
+            border-radius: 24px;
+            box-shadow: 0 10px 40px -10px rgba(37, 99, 235, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+        }
+
+        .card {
+            background: #ffffff;
+            border-radius: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.02);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid #f1f5f9;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+        }
+
+        /* Buttons */
+        .btn-base {
+            border-radius: 50px;
+            padding: 0.5rem 1.2rem;
+            transition: transform 0.2s, box-shadow 0.2s;
+            font-weight: 600;
+            font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            letter-spacing: 0.02em;
+        }
+        .btn-base:hover { transform: scale(1.02); filter: brightness(1.05); }
+        .btn-base:active { transform: scale(0.98); }
+
+        .btn-primary { background: linear-gradient(135deg, var(--primary), #1d4ed8); color: white; box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3); }
+        .btn-secondary { background: white; color: var(--text-main); border: 1px solid #e2e8f0; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
+        .btn-secondary:hover { background: #f8fafc; border-color: #cbd5e1; }
+        .btn-green { background: linear-gradient(135deg, #10b981, #059669); color: white; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3); }
+        .btn-orange { background: linear-gradient(135deg, #f97316, #ea580c); color: white; box-shadow: 0 4px 15px rgba(249, 115, 22, 0.3); }
+        .btn-purple { background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: white; box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3); }
+        .btn-red-outline { background: white; color: #ef4444; border: 1px solid #fee2e2; }
+        .btn-red-outline:hover { background: #fef2f2; border-color: #fca5a5; }
+
+        /* Inputs */
+        .input-rounded {
+            background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 50px; padding: 0.7rem 1.2rem; width: 100%; transition: all 0.3s; outline: none; font-size: 0.95rem; color: #334155;
+        }
+        .input-rounded:focus { background: white; border-color: var(--primary); box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1); }
+        .input-rounded:disabled { background: #f1f5f9; cursor: not-allowed; color: #94a3b8; }
+
+        /* Sheet Table */
+        .sheet-wrapper { border-radius: 16px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02); }
+        .sheet-table th { background-color: #f1f5f9; font-weight: 600; color: #475569; padding: 12px 8px; border-bottom: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+        .sheet-table td { border-bottom: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; padding: 4px; }
+        .input-cell { width: 100%; text-align: center; padding: 6px; border-radius: 6px; border: 1px solid transparent; font-weight: 500; color: #334155; transition: all 0.2s; }
+        .input-cell:focus { background: #eef2ff; border-color: #818cf8; color: #1e40af; outline: none; }
+        .input-cell:hover:not(:focus) { background: #f8fafc; }
+
+        /* Utilities */
+        .toggle-checkbox:checked { right: 0; border-color: #68D391; }
+        .toggle-checkbox:checked + .toggle-label { background-color: #68D391; }
+        .fade-in { animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .locked-card { background-color: #f8fafc; opacity: 0.85; border: 1px dashed #cbd5e1; }
+        
+        .custom-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; border: 2px solid #f1f5f9; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+<div id="app" class="flex flex-col min-h-screen">
+    
+    <!-- Navbar -->
+    <nav class="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-gray-100/50 shadow-sm transition-all duration-300">
+        <div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center gap-3 cursor-pointer group" @click="goHome">
+                    <div class="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-200 group-hover:scale-105 transition-transform">
+                        <i class="fa-solid fa-graduation-cap text-xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-bold text-xl text-gray-800 tracking-tight leading-none">SGS <span class="text-blue-600">Pro</span></h1>
+                        <p class="text-[10px] text-gray-500 font-bold tracking-widest uppercase">ระบบตรวจสอบเกรด - คะแนน</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div v-if="user && !user.isAnonymous" class="hidden md:flex items-center gap-2 px-4 py-1.5 bg-blue-50 rounded-full text-blue-700 text-xs font-bold border border-blue-100 shadow-sm">
+                        <i class="fa-solid fa-circle-user text-blue-500"></i> {{ user.email }}
+                        <span v-if="user.email === '39220@spt.ac.th'" class="bg-red-100 text-red-600 px-2 rounded-full text-[10px] ml-1">ADMIN</span>
+                    </div>
+                    <button v-if="isAdmin" @click="logout" class="text-gray-400 hover:text-red-500 font-medium transition p-2 rounded-xl hover:bg-red-50" title="ออกจากระบบ">
+                        <i class="fa-solid fa-power-off text-lg"></i>
+                    </button>
+                    <button v-else @click="view = 'login'" class="text-gray-500 hover:text-blue-600 font-medium transition text-sm px-4 py-2 rounded-xl hover:bg-blue-50">
+                        <i class="fa-solid fa-lock mr-2"></i> ผู้ดูแลระบบ
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- Loading -->
+        <div v-if="loading" class="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-white/80 backdrop-blur-md transition-all">
+            <div class="animate-spin rounded-full h-14 w-14 border-[5px] border-blue-100 border-t-blue-600 mb-4 shadow-xl"></div>
+            <p class="text-gray-600 font-bold animate-pulse">{{ loadingText }}</p>
+            <button v-if="showRetry" @click="forceStopLoading" class="mt-6 text-xs text-blue-600 hover:text-blue-800 underline font-medium">โหลดนานเกินไป? คลิกที่นี่</button>
+        </div>
+
+        <!-- VIEW: Home -->
+        <div v-if="view === 'home'" class="flex flex-col items-center justify-center min-h-[60vh] fade-in">
+            <div class="text-center max-w-2xl mx-auto mb-10 space-y-3">
+                <h2 class="text-5xl font-bold text-gray-900 tracking-tight">ตรวจสอบผลการเรียน</h2>
+                <p class="text-gray-500 text-lg font-light">ระบบประกาศเกรดออนไลน์ที่ทันสมัย รวดเร็ว และแม่นยำ</p>
+            </div>
+            <div class="glass-panel p-10 w-full max-w-md text-center transform transition hover:scale-105 duration-500 border-t-4 border-t-blue-500">
+                <div class="w-20 h-20 bg-blue-50 text-blue-600 rounded-3xl flex items-center justify-center mx-auto mb-8 text-3xl shadow-inner">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </div>
+                <h3 class="text-xl font-bold mb-2">สำหรับนักเรียน</h3>
+                <p class="text-gray-500 mb-6 text-sm">กรอกเลขประจำตัวนักเรียนเพื่อดูเก
+                <form @submit.prevent="searchStudent" class="space-y-5">
+                    <div class="relative">
+                        <input v-model="searchId" type="text" class="input-rounded text-center text-xl tracking-[0.2em] font-bold text-blue-900 placeholder-gray-300" placeholder="XXXXX" maxlength="5" required>
+                    </div>
+                    <button type="submit" class="btn-base btn-primary w-full py-3.5 text-lg shadow-xl shadow-blue-200/50">ตรวจสอบผลการเรียน</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- VIEW: Student Result -->
+        <div v-else-if="view === 'result'" class="max-w-3xl mx-auto fade-in">
+            <button @click="view = 'home'" class="mb-6 text-gray-500 hover:text-blue-600 flex items-center gap-2 transition group font-medium">
+                <div class="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm group-hover:shadow-md transition"><i class="fa-solid fa-arrow-left"></i></div>
+                <span>ค้นหาใหม่</span>
+            </button>
+
+            <div v-if="studentResult" class="space-y-6">
+                <!-- ID Card -->
+                <div class="glass-panel p-8 bg-gradient-to-br from-blue-600 to-indigo-700 text-white shadow-2xl shadow-blue-200 border-none relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full -translate-y-1/2 translate-x-1/4 blur-3xl"></div>
+                    <div class="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                        <div>
+                            <h2 class="text-4xl font-bold tracking-tight">{{ studentResult.prefix }}{{ studentResult.firstName }} {{ studentResult.lastName }}</h2>
+                            <div class="flex flex-wrap gap-3 mt-4 text-blue-100 text-sm font-medium">
+                                <span class="bg-white/20 px-3 py-1 rounded-full backdrop-blur-sm"><i class="fa-solid fa-id-card mr-1"></i> {{ studentResult.studentId }}</span>
+                                <span class="bg-white/20 px-3 py-1 rounded-full backdrop-blur-sm"><i class="fa-solid fa-layer-group mr-1"></i>ชั้น ม.{{ studentResult.classLevel }}</span>
+                                <span class="bg-white/20 px-3 py-1 rounded-full backdrop-blur-sm"><i class="fa-solid fa-door-open mr-1"></i>ห้อง {{ studentResult.room }}</span>
+                                <span class="bg-white/20 px-3 py-1 rounded-full backdrop-blur-sm"><i class="fa-solid fa-list-ol mr-1"></i>เลขที่ {{ studentResult.number }}</span>
+                            </div>
+                        </div>
+                        <div class="text-right bg-white/10 p-4 rounded-2xl backdrop-blur-sm border border-white/10">
+                            <div class="text-xs uppercase tracking-wider opacity-80 mb-1 font-bold">เกรดเฉลี่ย</div>
+                            <div class="text-5xl font-bold tracking-tight">{{ calculateGPA(studentResult.subjects) }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Subjects -->
+                                <div class="grid gap-4">
+                    <div v-for="(subject, idx) in studentResult.subjects" :key="idx" class="card overflow-hidden transition-all duration-300 hover:shadow-lg border border-gray-100 group">
+                        
+                        <div @click="subject.expanded = !subject.expanded" class="p-5 flex justify-between items-center cursor-pointer select-none hover:bg-gray-50 transition relative overflow-hidden">
+
+                            <div class="absolute right-0 top-0 w-32 h-32 bg-gradient-to-br from-blue-50 to-transparent rounded-bl-full -mr-10 -mt-10 opacity-50 pointer-events-none"></div>
+
+                            <div class="flex items-center gap-4 relative z-10">
+                                <div class="w-12 h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-sm shadow-sm border border-blue-100 group-hover:scale-110 transition-transform duration-300">
+                                    {{ idx + 1 }}
+                                </div>
+                                <div>
+                                    <h3 class="font-bold text-gray-800 text-lg group-hover:text-blue-600 transition leading-tight">
+                                        {{ subject.name }} 
+                                    </h3>
+                                    <div class="flex items-center gap-2 mt-1">
+                                        <span class="text-[10px] text-gray-500 font-medium bg-gray-100 px-2 py-0.5 rounded-full border border-gray-200">
+                                            {{ subject.credit }} หน่วยกิต
+                                        </span>
+                                        <span class="text-[10px] text-gray-400 md:hidden">แตะเพื่อดูรายละเอียด</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-center gap-4 text-right relative z-10">
+                                <div class="hidden md:block">
+                                    <span class="text-[10px] text-gray-400 block uppercase tracking-wider font-bold">คะแนนรวม</span>
+                                    <span class="font-bold text-xl text-blue-600">{{ calculateStudentViewTotal(subject).toFixed(2) }}</span>
+                                    <span v-if="subject.hideFinal" class="text-[9px] text-orange-400 block font-medium">(รอปลายภาค)</span>
+                                </div>
+
+                                <div class="md:hidden">
+                                    <span class="font-bold text-lg text-blue-600">{{ calculateStudentViewTotal(subject).toFixed(0) }}</span>
+                                </div>
+
+                                <div v-if="!subject.hideFinal" :class="getGradeColor(calculateGrade(calculateSubjectTotal(subject)))" class="w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-md transition-transform hover:scale-105 hover:rotate-3">
+                                    {{ calculateGrade(calculateSubjectTotal(subject)) }}
+                                </div>
+                                <div v-else class="w-12 h-12 rounded-xl flex items-center justify-center bg-gray-100 text-gray-400 font-bold text-xl shadow-inner border border-gray-200">
+                                    -
+                                </div>
+                                
+                                <i :class="subject.expanded ? 'rotate-180' : ''" class="fa-solid fa-chevron-down text-gray-300 transition-transform duration-300 ml-1"></i>
+                            </div>
+                        </div>
+                        
+                        <div v-if="subject.expanded" class="bg-gray-50/50 border-t border-gray-100 p-5 md:p-6 animate-[fadeIn_0.3s_ease-in-out]">
+                            <div class="grid md:grid-cols-2 gap-8">
+                                
+                                <div>
+                                    <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                                        <i class="fa-solid fa-folder-open text-blue-300"></i> คะแนนเก็บระหว่างภาค
+                                    </h4>
+                                    <div class="space-y-3">
+                                        <div v-for="(u, uIdx) in subject.units" :key="uIdx" class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm hover:border-blue-200 transition">
+                                            <div class="flex justify-between items-center mb-3 pb-2 border-b border-gray-50">
+                                                <span class="text-sm font-bold text-gray-700">{{ u.name }}</span>
+                                                <span class="font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-lg text-xs">
+                                                    {{ calcUnitTotal(u) }} <span class="text-blue-300">/</span> {{ u.maxScore || 'Auto' }}
+                                                </span>
+                                            </div>
+                                            
+                                            <div v-if="u.tasks && u.tasks.length > 0" class="space-y-1.5 mb-2">
+                                                <div v-for="(t, tIdx) in u.tasks" :key="tIdx" class="flex justify-between items-center text-xs text-gray-500 py-0.5 hover:bg-gray-50 rounded px-1 transition">
+                                                    <span class="pl-2 border-l-2 border-green-200">{{ t.name }}</span>
+                                                    <span class="font-mono">{{ t.score || 0 }} <span class="text-gray-300">/ {{ t.maxScore || t.fullScore || '-' }}</span></span>
+                                                </div>
+                                            </div>
+
+                                            <div v-if="u.tests && u.tests.length > 0" class="space-y-1.5 pt-2 border-t border-dashed border-gray-100">
+                                                <div v-for="(t, tIdx) in u.tests" :key="tIdx" class="flex justify-between items-center text-xs text-purple-600 py-0.5 hover:bg-purple-50 rounded px-1 transition">
+                                                    <span class="pl-2 border-l-2 border-purple-200">{{ t.name }}</span>
+                                                    <span class="font-mono font-medium">{{ t.score || t.rawScore || 0 }} <span class="text-purple-300">/ {{ t.maxScore || t.rawFull || '-' }}</span></span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                                        <i class="fa-solid fa-pen-nib text-yellow-300"></i> การสอบวัดผล
+                                    </h4>
+                                    <div class="space-y-4">
+                                        <div class="bg-white p-5 rounded-xl border border-yellow-100 shadow-sm flex justify-between items-center relative overflow-hidden group hover:shadow-md transition">
+                                            <div class="absolute right-0 top-0 w-20 h-20 bg-yellow-50 rounded-bl-full -mr-10 -mt-10 z-0 transition-transform group-hover:scale-110"></div>
+                                            <div class="relative z-10">
+                                                <div class="text-sm font-bold text-yellow-800 flex items-center gap-2"><i class="fa-regular fa-calendar-check"></i> สอบกลางภาค</div>
+                                                <div class="text-[10px] text-yellow-600/70 mt-1 font-medium bg-yellow-50 px-2 py-0.5 rounded-full inline-block">
+                                                    คะแนนดิบ: {{ subject.midterm?.mcqScore || 0 }} (ก) + {{ subject.midterm?.writeScore || 0 }} (ข)
+                                                </div>
+                                            </div>
+                                            <div class="relative z-10 text-right">
+                                                <div class="text-3xl font-bold text-yellow-600 tracking-tight">{{ parseFloat(subject.midterm?.calcScore||0).toFixed(2) }}</div>
+                                                <div class="text-[9px] text-yellow-400 font-bold tracking-widest uppercase">Points</div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div v-if="!subject.hideFinal" class="bg-white p-5 rounded-xl border border-purple-100 shadow-sm flex justify-between items-center relative overflow-hidden group hover:shadow-md transition">
+                                            <div class="absolute right-0 top-0 w-20 h-20 bg-purple-50 rounded-bl-full -mr-10 -mt-10 z-0 transition-transform group-hover:scale-110"></div>
+                                            <div class="relative z-10">
+                                                <div class="text-sm font-bold text-purple-800 flex items-center gap-2"><i class="fa-solid fa-flag-checkered"></i> สอบปลายภาค</div>
+                                                <div class="text-[10px] text-purple-600/70 mt-1 font-medium bg-purple-50 px-2 py-0.5 rounded-full inline-block">
+                                                    คะแนนดิบ: {{ subject.final?.mcqScore || 0 }} (ก) + {{ subject.final?.writeScore || 0 }} (ข)
+                                                </div>
+                                            </div>
+                                            <div class="relative z-10 text-right">
+                                                <div class="text-3xl font-bold text-purple-600 tracking-tight">{{ parseFloat(subject.final?.calcScore||0).toFixed(2) }}</div>
+                                                <div class="text-[9px] text-purple-400 font-bold tracking-widest uppercase">Points</div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div v-else class="bg-gray-50 p-6 rounded-xl border border-gray-200 shadow-inner text-center border-dashed group hover:bg-gray-100 transition">
+                                            <div class="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition text-gray-400">
+                                                <i class="fa-solid fa-lock text-xl"></i>
+                                            </div>
+                                            <h4 class="text-sm font-bold text-gray-600">รอประกาศผลสอบ</h4>
+                                            <p class="text-xs text-gray-400 mt-1">คะแนนปลายภาคยังไม่เปิดเผยในขณะนี้</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mt-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-4 rounded-xl shadow-lg shadow-blue-200 flex justify-between items-center transform transition hover:scale-[1.02]">
+                                        <div>
+                                            <div class="text-xs text-blue-100 font-medium opacity-80 uppercase tracking-wider">เกรดเฉลี่ยรายวิชา</div>
+                                            <div class="text-sm font-bold mt-0.5">{{ subject.code || 'วิชานี้' }}</div>
+                                        </div>
+                                        <div v-if="!subject.hideFinal"class="text-4xl font-bold tracking-normal drop-shadow-md">
+                                    {{ calculateGrade(calculateSubjectTotal(subject)) }}
+                                </div>
+                                <div v-else class="text-4xl font-bold tracking-tighter drop-shadow-md">
+                                    รอประกาศผล
+                                </div>
+                                        
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- VIEW: Login -->
+        <div v-else-if="view === 'login'" class="flex items-center justify-center min-h-[60vh] fade-in">
+            <div class="glass-panel p-10 w-full max-w-md border-t-4 border-t-blue-500">
+                <div class="text-center mb-8">
+                    <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-3xl flex items-center justify-center mx-auto mb-4 text-3xl"><i class="fa-solid fa-user-shield"></i></div>
+                    <h2 class="text-2xl font-bold text-gray-800">ผู้ดูแลระบบ</h2>
+                    <p class="text-gray-400 text-sm mt-1">เข้าสู่ระบบเพื่อจัดการข้อมูล</p>
+                </div>
+                <form @submit.prevent="handleLogin" class="space-y-5">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 mb-1 ml-2">อีเมล</label>
+                        <input v-model="loginForm.email" type="email" class="input-rounded" required>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 mb-1 ml-2">รหัสผ่าน</label>
+                        <input v-model="loginForm.password" type="password" class="input-rounded" required>
+                    </div>
+                    <button type="submit" class="btn-base btn-primary w-full py-3.5 text-lg shadow-lg mt-2 justify-center">เข้าสู่ระบบ</button>
+                    <p class="text-center text-xs text-gray-400 mt-4 cursor-pointer hover:text-blue-500" @click="view='home'">กลับหน้าหลัก</p>
+                </form>
+            </div>
+        </div>
+
+        <!-- VIEW: Admin Room Dashboard -->
+        <div v-else-if="view === 'admin_rooms'" class="space-y-8 fade-in">
+            <div class="glass-panel p-6 flex flex-col xl:flex-row justify-between items-center gap-6">
+                <div class="flex items-center gap-4">
+                    <div class="p-3 bg-blue-100 text-blue-600 rounded-2xl"><i class="fa-solid fa-school text-2xl"></i></div>
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-800">จัดการห้องเรียน</h2>
+                        <p class="text-gray-500 text-sm">เลือกห้องเรียนเพื่อเข้าจัดการข้อมูลนักเรียนและคะแนน</p>
+                    </div>
+                </div>
+                <div class="flex flex-wrap gap-3 justify-center">
+                    <button @click="openImportModal" class="btn-base btn-green shadow-green-200">
+                        <i class="fa-solid fa-file-import"></i> Import คะแนน
+                    </button>
+                    <button @click="importCSVClick" class="btn-base btn-secondary shadow-sm">
+                        <i class="fa-solid fa-user-plus text-blue-500"></i> Import รายชื่อ
+                        <input type="file" id="csvInput" @change="importCSV" accept=".csv" class="hidden">
+                    </button>
+                    <button @click="openStudentModal()" class="btn-base btn-primary shadow-blue-200">
+                        <i class="fa-solid fa-plus"></i> เพิ่มนักเรียน
+                    </button>
+                </div>
+            </div>
+
+            <!-- Room Grid -->
+            <div v-if="roomGroups.length > 0" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5">
+                <div v-for="room in roomGroups" :key="room.id" @click="enterRoom(room)" class="card p-6 cursor-pointer relative overflow-hidden group hover:border-blue-300">
+                    <div class="absolute top-0 right-0 w-24 h-24 bg-blue-50 rounded-bl-full -mr-10 -mt-10 group-hover:bg-blue-100 transition duration-500"></div>
+                    <div class="relative z-10">
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-2xl group-hover:scale-110 transition shadow-sm border border-blue-100">{{ room.room }}</div>
+                            <span class="text-xs font-bold text-gray-500 bg-gray-100 px-3 py-1 rounded-full group-hover:bg-white group-hover:text-blue-600 transition">ม.{{ room.level }}</span>
+                        </div>
+                        <h3 class="text-lg font-bold text-gray-800 group-hover:text-blue-700 transition">ห้อง {{ room.level }}/{{ room.room }}</h3>
+                        <div class="mt-2 flex items-center gap-2 text-sm text-gray-500 font-medium"><i class="fa-solid fa-user-graduate text-blue-300"></i> {{ room.count }} คน</div>
+                    </div>
+                </div>
+            </div>
+            <div v-else class="text-center py-20 bg-white rounded-3xl border-2 border-dashed border-gray-200">
+                <div class="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-300 text-3xl"><i class="fa-solid fa-school"></i></div>
+                <h3 class="text-lg font-bold text-gray-600">ยังไม่มีข้อมูลห้องเรียน</h3>
+                <p class="text-gray-400 text-sm mt-2">เริ่มจาก Import รายชื่อ หรือเพิ่มนักเรียนใหม่</p>
+            </div>
+        </div>
+
+        <!-- VIEW: Admin Student List -->
+        <div v-else-if="view === 'admin_students'" class="space-y-6 fade-in">
+            <div class="glass-panel p-5 flex flex-col xl:flex-row justify-between items-center gap-4 sticky top-20 z-30">
+                <div class="flex items-center gap-4 w-full md:w-auto">
+                    <button @click="view = 'admin_rooms'" class="w-12 h-12 rounded-2xl bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition text-gray-600 shadow-sm"><i class="fa-solid fa-arrow-left"></i></button>
+                    <div>
+                        <h2 class="font-bold text-2xl text-gray-800">ห้อง {{ currentRoom?.level }}/{{ currentRoom?.room }}</h2>
+                        <p class="text-xs text-gray-500 font-medium bg-gray-100 px-2 py-0.5 rounded-md inline-block">{{ filteredStudents.length }} รายชื่อ</p>
+                    </div>
+                </div>
+                <div class="flex flex-wrap gap-2 w-full xl:w-auto justify-center">
+                    <button @click="openBatchModeModal" class="btn-base btn-purple flex-1 md:flex-none shadow-purple-200"><i class="fa-solid fa-table"></i> มุมมองตาราง (Sheet)</button>
+                    <button @click="openClassMode" class="btn-base btn-orange flex-1 md:flex-none shadow-orange-200"><i class="fa-solid fa-layer-group"></i> จัดการวิชา (Class Mode)</button>
+                    <div class="h-8 w-px bg-gray-300 mx-2 hidden md:block"></div>
+                    <button @click="exportRosterCSV" class="btn-base btn-secondary flex-1 md:flex-none"><i class="fa-solid fa-list-ul"></i> รายชื่อ</button>
+                    <button @click="openExportModal" class="btn-base btn-secondary flex-1 md:flex-none text-blue-600 font-bold"><i class="fa-solid fa-file-excel"></i> Export คะแนน</button>
+                    <button @click="clearRoomData" class="btn-base btn-red-outline flex-1 md:flex-none"><i class="fa-solid fa-trash"></i> ล้างห้อง</button>
+                </div>
+            </div>
+
+            <!-- Student Table -->
+            <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-gray-50/50 text-gray-500 text-xs uppercase tracking-wider font-semibold border-b border-gray-100">
+                            <tr>
+                                <th class="p-5 w-24 text-center">สถานะ</th>
+                                <th class="p-5">รหัส</th>
+                                <th class="p-5">ชื่อ-นามสกุล</th>
+                                <th class="p-5 text-center">วิชา</th>
+                                <th class="p-5 text-right">จัดการ</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-50">
+                            <tr v-for="student in filteredStudents" :key="student.id" class="hover:bg-blue-50/30 transition group">
+                                <td class="p-5 text-center">
+                                    <div class="relative inline-block w-10 align-middle select-none transition duration-200 ease-in">
+                                        <input type="checkbox" :id="'toggle-'+student.id" class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer transition-all duration-300 left-0" 
+                                            :class="{'right-0 border-green-400': student.isPublished, 'left-0 border-gray-300': !student.isPublished}"
+                                            :checked="student.isPublished" @change="togglePublish(student)" style="top: 1px;">
+                                        <label :for="'toggle-'+student.id" class="toggle-label block overflow-hidden h-6 rounded-full cursor-pointer transition-colors duration-300" :class="student.isPublished ? 'bg-green-400' : 'bg-gray-300'"></label>
+                                    </div>
+                                </td>
+                                <td class="p-5 font-mono text-gray-500 font-medium">{{ student.studentId }}</td>
+                                <td class="p-5 font-bold text-gray-800">{{ student.prefix }}{{ student.firstName }} {{ student.lastName }}</td>
+                                <td class="p-5 text-center"><span class="px-3 py-1 rounded-full text-xs font-bold" :class="student.subjects?.length ? 'bg-blue-100 text-blue-600' : 'bg-red-50 text-red-500'">{{ student.subjects?.length || 0 }}</span></td>
+                                <td class="p-5 text-right flex justify-end gap-2 opacity-60 group-hover:opacity-100 transition">
+                                    <button @click="openScoreModal(student)" class="w-9 h-9 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition flex items-center justify-center shadow-sm"><i class="fa-solid fa-calculator text-sm"></i></button>
+                                    <button @click="openStudentModal(student)" class="w-9 h-9 rounded-full bg-gray-50 text-gray-600 hover:bg-gray-600 hover:text-white transition flex items-center justify-center shadow-sm"><i class="fa-solid fa-pen text-sm"></i></button>
+                                    <button @click="deleteStudent(student.id)" class="w-9 h-9 rounded-full bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition flex items-center justify-center shadow-sm"><i class="fa-solid fa-trash text-sm"></i></button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEW: Batch Score Grid -->
+        <div v-else-if="view === 'batch_view'" class="flex flex-col h-[calc(100vh-100px)] fade-in">
+            <div class="glass-panel p-4 flex justify-between items-center gap-4 mb-4">
+                <div class="flex items-center gap-4">
+                    <button @click="view = 'admin_students'" class="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition text-gray-600"><i class="fa-solid fa-arrow-left"></i></button>
+                    <div>
+                        <h2 class="font-bold text-xl text-gray-800 flex items-center gap-2"><i class="fa-solid fa-table text-purple-500"></i> {{ selectedBatchSubject }}</h2>
+                        <p class="text-xs text-gray-500">ห้อง {{ currentRoom.level }}/{{ currentRoom.room }} ({{ batchStudents.length }} คน)</p>
+                    </div>
+                </div>
+                <button @click="saveBatchScores" class="btn-base btn-primary px-6 shadow-lg"><i class="fa-solid fa-save"></i> บันทึกทั้งหมด</button>
+            </div>
+            <div class="bg-white rounded-2xl shadow-lg border border-gray-200 flex-grow overflow-hidden flex flex-col sheet-wrapper">
+                <div class="overflow-auto flex-grow custom-scrollbar">
+                    <table class="sheet-table w-full relative">
+                        <thead>
+                            <tr>
+                                <th class="sticky-left min-w-[50px] bg-gray-50 z-30">#</th>
+                                <th class="sticky-left min-w-[200px] left-[50px] bg-gray-50 z-30 text-left pl-4">ชื่อ-สกุล</th>
+                                <th v-for="(col, idx) in batchColumns" :key="idx" class="min-w-[80px] bg-gray-50 text-xs font-bold text-gray-600 uppercase tracking-wider py-3">
+                                    {{ col.label }} <br><span class="text-[9px] text-gray-400 font-normal">({{ col.full }})</span>
+                                </th>
+                                <th class="min-w-[80px] bg-blue-50 text-blue-700 font-bold border-l-2 border-blue-100">รวม</th>
+                                <th class="min-w-[60px] bg-yellow-50 text-yellow-700 font-bold">เกรด</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="(student, sIdx) in batchStudents" :key="student.id" class="hover:bg-gray-50 transition">
+                                <td class="sticky-left text-center text-gray-400 font-mono text-xs bg-white">{{ student.number }}</td>
+                                <td class="sticky-left left-[50px] bg-white font-medium text-gray-800 text-sm whitespace-nowrap pl-4 border-r-2 border-gray-200">{{ student.prefix }}{{ student.firstName }} {{ student.lastName }}</td>
+                                <td v-for="(col, cIdx) in batchColumns" :key="cIdx">
+    <input 
+        v-model="student.scores[col.key]" 
+        @paste="handleBatchPaste($event, sIdx, cIdx)" 
+        type="number"
+        step="0.01" 
+        class="input-cell focus:ring-2 focus:ring-blue-500"
+        @focus="$event.target.select()" 
+    >
+</td>
+
+                                <td class="text-center font-bold text-blue-600 bg-blue-50/30 border-l-2 border-blue-100">{{ calculateBatchRowTotal(student).toFixed(2) }}</td>
+                                <td class="text-center font-bold text-yellow-600 bg-yellow-50/30">{{ calculateGrade(calculateBatchRowTotal(student)) }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL: Subject Selection for Batch -->
+        <div v-if="modals.batchSelect" class="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <div class="glass-panel w-full max-w-md p-6 border-none">
+                <h3 class="font-bold text-lg text-gray-800 mb-4">เลือกวิชาเพื่อกรอกคะแนน</h3>
+                <div class="space-y-2 max-h-60 overflow-y-auto custom-scrollbar pr-1">
+                    <button v-for="sub in uniqueSubjectsInRoom" :key="sub" @click="enterBatchMode(sub)" class="w-full text-left p-3 rounded-xl border border-gray-200 hover:bg-purple-50 hover:border-purple-200 hover:text-purple-700 transition font-medium flex justify-between items-center group">
+                        {{ sub }} <i class="fa-solid fa-arrow-right text-gray-300 group-hover:text-purple-400"></i>
+                    </button>
+                    <div v-if="uniqueSubjectsInRoom.length === 0" class="text-center text-gray-400 py-4">ไม่พบรายวิชาในห้องนี้</div>
+                </div>
+                <button @click="modals.batchSelect = false" class="mt-4 btn-base btn-secondary w-full justify-center">ยกเลิก</button>
+            </div>
+        </div>
+
+        <!-- MODAL: Score Manager (Standard) -->
+        <div v-if="modals.score" class="fixed inset-0 z-[70] bg-white overflow-hidden flex flex-col">
+            <div class="h-16 border-b border-gray-100 flex items-center justify-between px-6 bg-white/90 backdrop-blur shrink-0 z-20 shadow-sm">
+                <div class="flex items-center gap-4">
+                    <button @click="modals.score = false" class="w-9 h-9 rounded-full hover:bg-gray-100 flex items-center justify-center transition text-gray-500"><i class="fa-solid fa-xmark text-lg"></i></button>
+                    <h3 class="font-bold text-lg text-gray-800">
+                        {{ isClassMode ? 'Class Mode (จัดการวิชาทั้งห้อง)' : `${editingStudent.prefix}${editingStudent.firstName} ${editingStudent.lastName} (ม.${editingStudent.classLevel}/${editingStudent.room} เลขที่ ${editingStudent.number})` }}
+                    </h3>
+                </div>
+                <div class="flex gap-2">
+                    <button @click="addSubject" class="btn-base btn-secondary text-sm border-dashed border-2 text-green-600 border-green-200 hover:bg-green-50"><i class="fa-solid fa-plus"></i> เพิ่มวิชา</button>
+                    <button @click="saveScores" class="btn-base btn-primary text-sm px-6"><i class="fa-solid fa-save"></i> บันทึก</button>
+                </div>
+            </div>
+            <div class="flex-grow overflow-y-auto bg-[#f8fafc] p-4 md:p-8 pb-32 custom-scrollbar">
+                 <div v-if="isClassMode" class="bg-orange-50 border border-orange-200 rounded-3xl p-6 shadow-sm mb-6">
+                    <div class="flex items-start gap-4">
+                        <div class="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center text-orange-600"><i class="fa-solid fa-tower-broadcast"></i></div>
+                        <div class="flex-grow">
+                            <h4 class="font-bold text-orange-800 text-base mb-3">Sync to other rooms</h4>
+                            <div class="flex flex-wrap gap-3">
+                                <label class="flex items-center gap-2 bg-white px-4 py-2 rounded-full border border-orange-100 cursor-pointer hover:border-orange-300 transition select-none shadow-sm"><input type="checkbox" :checked="syncAllRooms" @change="toggleSyncAll" class="rounded text-orange-500 focus:ring-orange-500 w-4 h-4"><span class="text-sm font-bold text-gray-700">All Rooms</span></label>
+                                <label v-for="room in availableRoomsForSync" :key="room" class="flex items-center gap-2 bg-white px-4 py-2 rounded-full border border-orange-100 cursor-pointer hover:border-orange-300 transition select-none shadow-sm"><input type="checkbox" v-model="selectedSyncRooms" :value="room" class="rounded text-orange-500 focus:ring-orange-500 w-4 h-4"><span class="text-sm text-gray-600">{{ room }}</span></label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                 <div v-for="(subject, sIdx) in editingSubjects" :key="sIdx" class="card relative overflow-hidden transition-all duration-300 border border-gray-200 mb-4" :class="{'locked-card grayscale pointer-events-none': !canEdit(subject)}">
+                    <div @click="subject.expanded = !subject.expanded" class="p-4 flex items-center justify-between cursor-pointer hover:bg-gray-50 bg-white">
+                        <div class="flex items-center gap-4">
+                            <div class="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold" :class="canEdit(subject) ? 'bg-blue-600' : 'bg-gray-400'">{{ sIdx + 1 }}</div>
+                            <div><h4 class="font-bold text-gray-800 text-lg">{{ subject.name || 'วิชาใหม่' }}</h4><p class="text-xs text-gray-500">{{ subject.credit }} หน่วยกิต</p></div>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <div class="text-right hidden sm:block"><div class="text-[10px] text-gray-400 font-bold uppercase">รวม (เกรด)</div><div class="font-bold text-blue-600 text-lg leading-tight">{{ getLiveSubjectTotal(subject).toFixed(2) }} <span class="text-sm text-gray-400 font-normal">({{ calculateGrade(getLiveSubjectTotal(subject)) }})</span></div></div>
+                            <div v-if="canEdit(subject)" class="flex items-center gap-2"><button @click.stop="removeSubject(sIdx)" class="text-gray-300 hover:text-red-500 p-2"><i class="fa-solid fa-trash-can"></i></button><i class="fa-solid fa-chevron-down text-gray-400 transition-transform duration-300" :class="subject.expanded ? 'rotate-180' : ''"></i></div>
+                        </div>
+                    </div>
+                    <div v-if="subject.expanded" class="p-6 grid lg:grid-cols-2 gap-8 border-t border-gray-100 bg-gray-50/30">
+                        <!-- Manage Editors Section (FIXED: type="button" and reactivity) -->
+                        <div class="lg:col-span-2 mb-4 bg-white p-3 rounded-xl border border-gray-100 shadow-sm flex items-center gap-2" v-if="canEdit(subject)">
+                            <div class="text-xs text-gray-500 font-bold uppercase mr-2"><i class="fa-solid fa-users"></i> ผู้ร่วมสอน:</div>
+                            <div class="flex flex-wrap gap-2">
+                                <div v-for="editor in subject.editors" :key="editor" class="bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded-full flex items-center gap-1 border border-gray-200 shadow-sm">
+                                    {{ editor }} <button type="button" @click="removeEditor(subject, editor)" class="text-red-400 hover:text-red-600 ml-1 font-bold">&times;</button>
+                                </div>
+                                <button type="button" @click="addEditor(subject)" class="text-xs text-blue-500 hover:underline flex items-center gap-1 bg-blue-50 px-2 py-1 rounded-full border border-blue-100 hover:bg-blue-100 transition"><i class="fa-solid fa-user-plus"></i> เพิ่มผู้สอน</button>
+                            </div>
+                        </div>
+
+                        <div class="lg:col-span-2 grid md:grid-cols-12 gap-6 items-end pb-6 border-b border-gray-100"><div class="md:col-span-8"><label class="text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-1 block">ชื่อวิชา</label><input v-model="subject.name" :disabled="!canEdit(subject)" class="block w-full text-xl font-bold text-blue-900 bg-transparent border-b-2 border-transparent hover:border-blue-200 focus:border-blue-600 outline-none transition placeholder-gray-300 pb-1" placeholder="ชื่อวิชา"></div><div class="md:col-span-2"><label class="text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-1 block">หน่วยกิต</label><input v-model.number="subject.credit" :disabled="!canEdit(subject)" type="number" step="0.5" class="input-rounded text-center font-bold text-gray-600 py-2"></div></div>
+                        <div class="space-y-4">
+                            <div class="flex justify-between items-center pb-2 border-b border-gray-100"><h4 class="font-bold text-gray-700 text-sm flex items-center gap-2"><div class="w-2 h-2 rounded-full bg-blue-500"></div> คะแนนเก็บ</h4></div>
+                            <div v-for="(unit, uIdx) in subject.units" :key="uIdx" class="bg-white p-4 rounded-2xl border border-gray-100 relative hover:shadow-md transition">
+                                <button @click="subject.units.splice(uIdx, 1)" class="absolute top-2 right-2 text-gray-300 hover:text-red-500 opacity-0 hover:opacity-100"><i class="fa-solid fa-times"></i></button>
+                                <div class="flex items-center gap-3 mb-3">
+                                    <div class="w-6 h-6 rounded bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">{{ uIdx + 1 }}</div>
+                                    <input v-model="unit.name" class="flex-grow text-sm font-bold text-gray-700 bg-transparent border-b border-transparent hover:border-gray-300 focus:border-blue-500 outline-none" placeholder="ชื่อหน่วย">
+                                    <div class="text-xs font-bold text-green-600 bg-green-50 px-2 py-1 rounded border border-green-100 min-w-[60px] text-center">ได้: {{ getLiveUnitTotal(unit) }}</div>
+                                    <div class="bg-gray-50 px-3 py-1 rounded-lg text-xs text-gray-500 flex items-center gap-2 border border-gray-200"><span>เต็ม:</span><input v-model.number="unit.maxScore" type="number" class="w-10 bg-transparent text-center font-bold text-blue-600 outline-none" placeholder="Auto"></div>
+                                </div>
+                                <div class="space-y-2 pl-3 border-l-2 border-blue-100 ml-3">
+                                    <div v-for="(task, tIdx) in unit.tasks" :key="tIdx" class="flex items-center gap-2 text-sm"><input v-model="task.name" class="flex-grow input-rounded py-1 px-3 text-xs" placeholder="ชื่องาน"><div v-if="!isClassMode" class="flex items-center bg-blue-50 rounded-full px-2 py-1"><input v-model.number="task.score" type="number" class="w-10 text-center bg-transparent text-blue-700 font-bold text-xs outline-none" placeholder="0"><span class="text-blue-300 px-1">/</span></div><input v-model.number="task.fullScore" type="number" class="w-12 text-center input-rounded py-1 px-1 text-xs text-gray-500" placeholder="เต็ม"><button @click="unit.tasks.splice(tIdx, 1)" class="text-gray-300 hover:text-red-400 w-5 h-5 flex items-center justify-center"><i class="fa-solid fa-minus"></i></button></div><button @click="unit.tasks.push({name:'งานใหม่', score:0, fullScore:10})" class="text-xs text-blue-500 hover:text-blue-700 font-medium pl-1 mt-1">+ เพิ่มงาน</button>
+                                </div>
+                                <div class="mt-3 pt-3 border-t border-dashed border-gray-200"><div class="text-[10px] font-bold text-gray-400 uppercase mb-2 flex justify-between"><span>สอบย่อย</span><button @click="unit.tests.push({name: 'Quiz', rawScore:0, rawFull:10, weightFull:5, calcScore:0})" class="text-blue-500 hover:text-blue-700 text-xs font-bold">+ เพิ่ม</button></div><div v-for="(test, testIdx) in unit.tests" :key="testIdx" class="flex items-center gap-2 mb-2 bg-gray-50 p-2 rounded-xl border border-gray-100"><input v-model="test.name" class="w-20 text-xs bg-transparent outline-none font-bold text-gray-600 pl-1" placeholder="ชื่อสอบ"><div class="flex-grow grid grid-cols-3 gap-1 text-[10px] text-center"><div><span class="text-gray-400 block mb-0.5">เต็ม</span><input v-model.number="test.rawFull" class="w-full bg-white rounded border border-gray-200 text-center py-0.5"></div><div><span class="text-blue-400 block font-bold mb-0.5">นน.</span><input v-model.number="test.weightFull" class="w-full bg-white rounded border border-blue-200 text-center text-blue-700 font-bold py-0.5"></div><div v-if="!isClassMode"><span class="text-green-600 block mb-0.5">ได้</span><input v-model.number="test.rawScore" class="w-full bg-white rounded border border-green-200 text-center text-green-700 font-bold py-0.5"></div></div><button @click="unit.tests.splice(testIdx, 1)" class="text-red-300 hover:text-red-500 text-xs ml-1"><i class="fa-solid fa-times"></i></button></div></div>
+                            </div>
+                            <button @click="addUnit(sIdx)" class="w-full py-2 border-2 border-dashed border-gray-200 text-gray-400 rounded-xl hover:border-blue-300 hover:text-blue-500 transition text-sm font-bold flex items-center justify-center gap-2 bg-gray-50/30"><i class="fa-solid fa-plus"></i> เพิ่มหน่วยการเรียนรู้</button>
+                        </div>
+                        <div class="space-y-6">
+                            <div class="flex justify-between items-center pb-2 border-b border-gray-100"><h4 class="font-bold text-gray-700 text-sm flex items-center gap-2"><div class="w-2 h-2 rounded-full bg-purple-500"></div> การสอบวัดผล</h4></div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="bg-yellow-50 p-5 rounded-2xl border border-yellow-100 shadow-sm">
+                                    <div class="font-bold text-yellow-800 text-sm mb-3 flex justify-between items-center"><span class="flex items-center gap-2"><i class="fa-regular fa-star"></i> กลางภาค</span><span class="text-xs bg-white px-2 py-1 rounded text-yellow-700 border border-yellow-200 font-bold">{{ getLiveExamTotal(subject.midterm).toFixed(2) }}</span></div>
+                                    <div class="space-y-3 text-xs"><div class="bg-white/60 p-2 rounded-lg space-y-1"><div class="font-bold text-gray-500 text-[10px] uppercase">ปรนัย (MCQ)</div><div class="flex justify-between items-center gap-2"><div><span class="text-gray-400 block">เต็ม</span><input v-model.number="subject.midterm.mcqFull" class="w-10 text-center bg-white border border-yellow-200 rounded font-medium"></div><div><span class="text-yellow-600 block font-bold">น้ำหนัก</span><input v-model.number="subject.midterm.mcqWeight" class="w-10 text-center bg-white border border-yellow-400 rounded font-bold text-yellow-700"></div><div v-if="!isClassMode"><span class="text-green-600 block">ได้</span><input v-model.number="subject.midterm.mcqScore" class="w-10 text-center bg-white border border-green-200 rounded font-bold text-green-700"></div></div></div><div class="bg-white/60 p-2 rounded-lg space-y-1"><div class="font-bold text-gray-500 text-[10px] uppercase">อัตนัย (Write)</div><div class="flex justify-between items-center gap-2"><div><input v-model.number="subject.midterm.writeFull" class="w-10 text-center bg-white border border-yellow-200 rounded font-medium"></div><div><input v-model.number="subject.midterm.writeWeight" class="w-10 text-center bg-white border border-yellow-400 rounded font-bold text-yellow-700"></div><div v-if="!isClassMode"><input v-model.number="subject.midterm.writeScore" class="w-10 text-center bg-white border border-green-200 rounded font-bold text-green-700"></div></div></div></div>
+                                </div>
+                                <div class="bg-purple-50 p-5 rounded-2xl border border-purple-100 shadow-sm relative">
+                                    <div class="flex justify-between items-start mb-3"><div class="font-bold text-purple-800 text-sm flex items-center gap-2"><i class="fa-solid fa-flag-checkered"></i> ปลายภาค</div><div class="flex items-center gap-2"><span class="text-xs bg-white px-2 py-1 rounded text-purple-700 border border-purple-200 font-bold">{{ getLiveExamTotal(subject.final).toFixed(2) }}</span><label class="cursor-pointer"><input type="checkbox" v-model="subject.hideFinal" class="hidden peer"><i class="fa-regular fa-eye text-gray-400 peer-checked:hidden"></i><i class="fa-regular fa-eye-slash text-purple-500 hidden peer-checked:inline"></i></label></div></div>
+                                    <div class="space-y-3 text-xs" :class="{'opacity-50': subject.hideFinal}"><div class="bg-white/60 p-2 rounded-lg space-y-1"><div class="font-bold text-gray-500 text-[10px] uppercase">ปรนัย (MCQ)</div><div class="flex justify-between items-center gap-2"><div><span class="text-gray-400 block">เต็ม</span><input v-model.number="subject.final.mcqFull" class="w-10 text-center bg-white border border-purple-200 rounded font-medium"></div><div><span class="text-purple-600 block font-bold">น้ำหนัก</span><input v-model.number="subject.final.mcqWeight" class="w-10 text-center bg-white border border-purple-400 rounded font-bold text-purple-700"></div><div v-if="!isClassMode"><span class="text-green-600 block">ได้</span><input v-model.number="subject.final.mcqScore" class="w-10 text-center bg-white border border-green-200 rounded font-bold text-green-700"></div></div></div><div class="bg-white/60 p-2 rounded-lg space-y-1"><div class="font-bold text-gray-500 text-[10px] uppercase">อัตนัย (Write)</div><div class="flex justify-between items-center gap-2"><div><input v-model.number="subject.final.writeFull" class="w-10 text-center bg-white border border-purple-200 rounded font-medium"></div><div><input v-model.number="subject.final.writeWeight" class="w-10 text-center bg-white border border-purple-400 rounded font-bold text-purple-700"></div><div v-if="!isClassMode"><input v-model.number="subject.final.writeScore" class="w-10 text-center bg-white border border-green-200 rounded font-bold text-green-700"></div></div></div></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                 </div>
+            </div>
+        </div>
+
+        <!-- MODAL: Import Advanced -->
+        <div v-if="modals.import" class="fixed inset-0 z-[90] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <div class="glass-panel w-full max-w-lg overflow-hidden border-none">
+                <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
+                    <h3 class="font-bold text-lg text-gray-800"><i class="fa-solid fa-file-import text-green-500 mr-2"></i> Smart Import</h3>
+                    <button @click="modals.import = false" class="text-gray-400 hover:text-red-500"><i class="fa-solid fa-times"></i></button>
+                </div>
+                <div class="p-6 space-y-4">
+                    <div class="text-sm text-gray-600"><p class="mb-2">ระบบจะ <strong>ผสาน (Merge)</strong> ข้อมูลใหม่เข้ากับข้อมูลเดิม หากวิชา/งาน มีอยู่แล้วจะอัปเดตคะแนน ถ้ายังไม่มีจะเพิ่มให้ใหม่</p><button @click="downloadTemplate" class="text-blue-600 hover:underline font-bold text-xs"><i class="fa-solid fa-download"></i> ดาวน์โหลด Template</button></div>
+                    <div class="border-2 border-dashed border-gray-300 rounded-2xl p-8 text-center hover:border-blue-400 transition bg-gray-50 cursor-pointer relative"><input type="file" id="advancedImportInput" @change="handleAdvancedImport" accept=".csv" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"><i class="fa-solid fa-cloud-arrow-up text-4xl text-gray-400 mb-2"></i><p class="text-sm font-bold text-gray-600">คลิกเพื่อเลือกไฟล์ CSV</p></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL: Export Selection -->
+        <div v-if="modals.export" class="fixed inset-0 z-[90] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <div class="glass-panel w-full max-w-md overflow-hidden border-none">
+                <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center"><h3 class="font-bold text-lg text-gray-800">เลือกวิชาที่จะส่งออก</h3><button @click="modals.export = false" class="text-gray-400 hover:text-red-500"><i class="fa-solid fa-times"></i></button></div>
+                <div class="p-6 space-y-4">
+    <div class="space-y-2">
+        <div v-if="isAdmin">
+            <label class="flex items-center gap-3 p-3 border rounded-xl cursor-pointer hover:bg-blue-50 transition" :class="selectedExportSubject === 'All' ? 'border-blue-500 bg-blue-50' : 'border-gray-200'">
+                <input type="radio" v-model="selectedExportSubject" value="All" class="w-5 h-5 text-blue-600">
+                <span class="font-bold text-gray-700">ส่งออกทุกรายวิชา (รวม)</span>
+            </label>
+            <div class="border-t border-gray-100 my-2"></div>
+        </div>
+
+        <p class="text-xs text-gray-400 font-bold uppercase tracking-wider mb-2">เลือกเฉพาะวิชา</p>
+        <div class="max-h-60 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
+            <label v-for="subName in uniqueSubjectsInRoom" :key="subName" class="flex items-center gap-3 p-3 border rounded-xl cursor-pointer hover:bg-blue-50 transition" :class="selectedExportSubject === subName ? 'border-blue-500 bg-blue-50' : 'border-gray-200'">
+                <input type="radio" v-model="selectedExportSubject" :value="subName" class="w-5 h-5 text-blue-600">
+                <span class="text-gray-700 font-medium">{{ subName }}</span>
+            </label>
+            
+            <div v-if="uniqueSubjectsInRoom.length === 0" class="text-center text-gray-400 py-4">ไม่พบรายวิชาในห้องนี้</div>
+        </div>
+    </div>
+    
+    <button @click="executeExport" class="btn-base btn-primary w-full justify-center shadow-lg">ยืนยันการส่งออก</button>
+</div>
+            </div>
+        </div>
+
+        <!-- MODAL: Student Form -->
+        <div v-if="modals.student" class="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <div class="glass-panel w-full max-w-lg overflow-hidden transform transition-all border-none">
+                <div class="px-8 py-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50"><h3 class="font-bold text-xl text-gray-800">{{ editingStudent ? 'แก้ไขข้อมูลนักเรียน' : 'ลงทะเบียนนักเรียนใหม่' }}</h3><button @click="modals.student = false" class="text-gray-400 hover:text-red-500 transition"><i class="fa-solid fa-times text-xl"></i></button></div>
+                <form @submit.prevent="saveStudent" class="p-8 space-y-5">
+                    <div class="grid grid-cols-12 gap-4"><div class="col-span-4"><label class="block text-xs font-bold text-gray-500 mb-2 ml-2">รหัส</label><input v-model="studentForm.studentId" class="input-rounded bg-gray-50 font-mono text-center font-bold text-blue-900" required maxlength="5"></div><div class="col-span-8"><label class="block text-xs font-bold text-gray-500 mb-2 ml-2">คำนำหน้า</label><select v-model="studentForm.prefix" class="input-rounded cursor-pointer"><option value="ด.ช.">ด.ช.</option><option value="ด.ญ.">ด.ญ.</option><option value="นาย">นาย</option><option value="น.ส.">น.ส.</option></select></div></div>
+                    <div class="grid grid-cols-2 gap-4"><div><label class="block text-xs font-bold text-gray-500 mb-2 ml-2">ชื่อ</label><input v-model="studentForm.firstName" class="input-rounded" required></div><div><label class="block text-xs font-bold text-gray-500 mb-2 ml-2">นามสกุล</label><input v-model="studentForm.lastName" class="input-rounded" required></div></div>
+                    <div class="grid grid-cols-3 gap-4 bg-blue-50 p-4 rounded-3xl border border-blue-100"><div><label class="block text-xs font-bold text-blue-500 mb-1 ml-1 text-center">ชั้น</label><input v-model="studentForm.classLevel" type="number" class="input-rounded text-center font-bold text-blue-700 bg-white" required></div><div><label class="block text-xs font-bold text-blue-500 mb-1 ml-1 text-center">ห้อง</label><input v-model="studentForm.room" type="number" class="input-rounded text-center font-bold text-blue-700 bg-white" required></div><div><label class="block text-xs font-bold text-blue-500 mb-1 ml-1 text-center">เลขที่</label><input v-model="studentForm.number" type="number" class="input-rounded text-center font-bold text-blue-700 bg-white" required></div></div>
+                    <div class="pt-4 flex justify-end gap-3"><button type="button" @click="modals.student = false" class="btn-base btn-secondary">ยกเลิก</button><button type="submit" class="btn-base btn-primary px-8 shadow-lg">บันทึก</button></div>
+                </form>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-auto py-6 text-center text-sm text-gray-400">
+        &copy; <span id="year"></span> | พัฒนาโดย นายณัฐพงศ์ ขาวนุ้ย
+    </footer>
+</div>
+
+<script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+    const firebaseConfig = { apiKey: "AIzaSyASJrqRxgvOC5q1IXu2t_wqgkGMnq02OZ8", authDomain: "score-spt.firebaseapp.com", projectId: "score-spt", storageBucket: "score-spt.firebasestorage.app", messagingSenderId: "104416668462", appId: "1:104416668462:web:b7e5e9b80c542f797c28bf" };
+    try { firebase.initializeApp(firebaseConfig); } catch(e) { console.error("Firebase Init Error", e); }
+    const db = firebase.firestore(); const auth = firebase.auth(); const APP_ID = 'score-spt-enterprise-super-admin-fixed-v2';
+    const { createApp, ref, reactive, computed, onMounted } = Vue;
+
+    createApp({
+        setup() {
+            const view = ref('home'); const loading = ref(true); const loadingText = ref('Connecting...'); const showRetry = ref(false);
+            const user = ref(null); const isAdmin = computed(() => user.value && !user.value.isAnonymous);
+            const searchId = ref(''); const studentResult = ref(null); const students = ref([]); const currentRoom = ref(null);
+            
+            const loginForm = reactive({ email: '', password: '' });
+            const modals = reactive({ student: false, score: false, import: false, export: false, batchSelect: false });
+            const editingStudent = ref(null); const studentForm = reactive({ studentId:'', prefix:'', firstName:'', lastName:'', classLevel:'', room:'', number:'' });
+            const editingSubjects = ref([]); const isClassMode = ref(false); const selectedSyncRooms = ref([]); const syncAllRooms = ref(false);
+            const selectedExportSubject = ref('All');
+            const selectedBatchSubject = ref(''); const batchColumns = ref([]); const batchStudents = ref([]);
+
+            const forceStopLoading = () => loading.value = false;
+
+            onMounted(() => {
+                const safety = setTimeout(() => { if(loading.value) { loadingText.value = 'Taking too long...'; showRetry.value = true; setTimeout(() => loading.value = false, 3000); } }, 5000);
+                auth.onAuthStateChanged(async (u) => {
+                    user.value = u;
+                    if (u && !u.isAnonymous) {
+                        loadingText.value = 'Loading Data...';
+                        try {
+                            db.collection('artifacts').doc(APP_ID).collection('public').doc('data').collection('students')
+                            .onSnapshot(snap => { students.value = snap.docs.map(d => ({ id: d.id, ...d.data() })); loading.value = false; clearTimeout(safety); },
+                                err => { alert("Load Failed: " + err.message); loading.value = false; clearTimeout(safety); });
+                        } catch(e) { loading.value = false; }
+                    } else {
+                        if (!u) try { await auth.signInAnonymously(); } catch(e) {}
+                        loading.value = false; clearTimeout(safety);
+                    }
+                });
+            });
+const focusNextRow = (event, rowIndex, colIndex) => {
+    // หา tr ถัดไป
+    const currentInput = event.target;
+    const currentTr = currentInput.closest('tr');
+    const nextTr = currentTr.nextElementSibling;
+    
+    if (nextTr) {
+        // หา input ในคอลัมน์เดิมของแถวถัดไป
+        const inputs = nextTr.querySelectorAll('input.input-cell');
+        if (inputs[colIndex]) {
+            inputs[colIndex].focus();
+            inputs[colIndex].select(); // เลือกข้อความทั้งหมดเพื่อให้พิมพ์ทับได้เลย
+        }
+    }
+};
+
+// อย่าลืมใส่ focusNextRow ใน return { ... } ที่ด้านล่างสุดของ script ด้วยครับ
+
+            // Data Computed
+            const roomGroups = computed(() => {
+                const map = new Map();
+                students.value.forEach(s => {
+                    const k = `${String(s.classLevel).replace('ม.', '')}-${String(s.room)}`;
+                    if (!map.has(k)) map.set(k, { id: k, level: String(s.classLevel).replace('ม.', ''), room: String(s.room), count: 0 });
+                    map.get(k).count++;
+                });
+                return Array.from(map.values()).sort((a,b) => (a.level!=b.level)?a.level-b.level : a.room-b.room);
+            });
+            const filteredStudents = computed(() => !currentRoom.value ? [] : students.value.filter(s => String(s.classLevel).replace('ม.', '') == currentRoom.value.level && String(s.room) == currentRoom.value.room).sort((a,b) => parseInt(a.number) - parseInt(b.number)));
+            const availableRoomsForSync = computed(() => !currentRoom.value ? [] : roomGroups.value.filter(r => r.level == currentRoom.value.level && `${r.level}-${r.room}` !== `${currentRoom.value.level}-${currentRoom.value.room}`).map(r => r.room).sort((a,b)=>a-b));
+            const uniqueSubjectsInRoom = computed(() => {
+                const subs = new Set();
+                filteredStudents.value.forEach(s => { if(s.subjects) s.subjects.forEach(sb => subs.add(sb.name)); });
+                return Array.from(subs).sort();
+            });
+
+            // Basic Actions
+            const goHome = () => { view.value = 'home'; searchId.value = ''; studentResult.value = null; };
+            const login = () => view.value = 'login';
+            const logout = () => { auth.signOut(); goHome(); };
+            const handleLogin = async () => { loading.value = true; try { await auth.signInWithEmailAndPassword(loginForm.email, loginForm.password); view.value = 'admin_rooms'; } catch(e) { alert('Login Failed'); loading.value = false; } };
+            const enterRoom = (room) => { currentRoom.value = room; view.value = 'admin_students'; };
+            const searchStudent = async () => {
+                if(!searchId.value) return; loading.value = true;
+                try {
+                    const snap = await db.collection('artifacts').doc(APP_ID).collection('public').doc('data').collection('students').where('studentId', '==', searchId.value).limit(1).get();
+                    if(snap.empty) alert('Not Found');
+                    else { const d = snap.docs[0].data(); if(!d.isPublished) alert('Not Published'); else { studentResult.value = {id:snap.docs[0].id, ...d}; if(studentResult.value.subjects) studentResult.value.subjects.forEach(s=>s.expanded=false); view.value='result'; } }
+                } catch(e) { alert('Error'); } loading.value = false;
+            };
+
+            const toggleSubject = (s) => { if(studentResult.value) studentResult.value.subjects.forEach(sub => sub.expanded = false); s.expanded = !s.expanded; };
+            
+            // --- Permission Logic ---
+            const canEdit = (subject) => {
+                if (!user.value || user.value.isAnonymous) return false;
+                if (user.value.email === '39220@spt.ac.th') return true; 
+                if (!subject.owner) return true; 
+                if (subject.owner.toLowerCase() === user.value.email.toLowerCase()) return true; 
+                if (subject.editors && subject.editors.map(e=>e.toLowerCase()).includes(user.value.email.toLowerCase())) return true; 
+                return false;
+            };
+            
+            const addEditor = (subject) => {
+                if(!canEdit(subject)) return alert('คุณไม่มีสิทธิ์เพิ่มผู้สอน');
+                
+                // Force reactivity: Ensure editors array exists
+                if(!Array.isArray(subject.editors)) subject.editors = [];
+
+                const email = prompt("กรุณาระบุอีเมลผู้ร่วมสอน (Co-Teacher):");
+                if(email) {
+                    if (email.includes('@') && email.includes('.')) {
+                        const trimmedEmail = email.trim();
+                        // Check duplicate
+                        if(!subject.editors.some(e => e.toLowerCase() === trimmedEmail.toLowerCase())) {
+                            // Use Spread Syntax to force reactivity update in Vue 3
+                            subject.editors = [...subject.editors, trimmedEmail];
+                        } else {
+                            alert("มีอีเมลนี้ในรายการแล้ว");
+                        }
+                    } else {
+                        alert("รูปแบบอีเมลไม่ถูกต้อง");
+                    }
+                }
+            };
+
+            const removeEditor = (subject, email) => {
+                if(confirm(`ลบสิทธิ์ผู้สอน ${email} ใช่หรือไม่?`)) {
+                    subject.editors = subject.editors.filter(e => e !== email);
+                }
+            };
+
+            const openScoreModal = (student) => { 
+                editingStudent.value = student; isClassMode.value = false; 
+                editingSubjects.value = JSON.parse(JSON.stringify(student.subjects||[])).map(s=>{
+                    s.expanded=false; 
+                    if(!s.editors) s.editors = []; 
+                    return s;
+                }); 
+                modals.score = true; 
+            };
+            
+            const openClassMode = () => {
+                if(filteredStudents.value.length === 0) return alert('No Students');
+                editingStudent.value = filteredStudents.value[0]; isClassMode.value = true; selectedSyncRooms.value = [];
+                editingSubjects.value = JSON.parse(JSON.stringify(editingStudent.value.subjects||[])).map(s=>{
+                    s.expanded=false; 
+                    if(!s.editors) s.editors = []; 
+                    return s;
+                });
+                modals.score = true;
+            };
+
+            const addSubject = () => {
+                editingSubjects.value.push({ 
+                    name: '', credit: 1.0, owner: user.value.email, editors: [], hideFinal: false, expanded: true, 
+                    units: [], 
+                    midterm: { mcqScore:0, mcqFull:10, mcqWeight:5, writeScore:0, writeFull:10, writeWeight:5, calcScore:0 }, 
+                    final: { mcqScore:0, mcqFull:15, mcqWeight:10, writeScore:0, writeFull:15, writeWeight:10, calcScore:0 } 
+                });
+            };
+            
+            const removeSubject = (i) => editingSubjects.value.splice(i,1);
+            const toggleSyncAll = () => { if(syncAllRooms.value = !syncAllRooms.value) selectedSyncRooms.value = availableRoomsForSync.value; else selectedSyncRooms.value = []; };
+
+            // Calc Logic
+            const calcPart = (sc, fl, wt) => (parseFloat(fl)>0) ? (parseFloat(sc)/parseFloat(fl))*parseFloat(wt) : 0;
+            const getLiveExamTotal = (exam) => calcPart(exam.mcqScore, exam.mcqFull, exam.mcqWeight) + calcPart(exam.writeScore, exam.writeFull, exam.writeWeight);
+            const getLiveUnitTotal = (u) => {
+                let tstW = u.tests.reduce((a,b)=>a+(parseFloat(b.weightFull)||0),0);
+                let tstS = u.tests.reduce((a,b)=>a+calcPart(b.rawScore, b.rawFull, b.weightFull),0);
+                let tskR = u.tasks.reduce((a,b)=>a+(parseFloat(b.score)||0),0);
+                let tskF = u.tasks.reduce((a,b)=>a+(parseFloat(b.fullScore)||0),0);
+                let max = parseFloat(u.maxScore);
+                if(!max) return (tskR + tstS).toFixed(2);
+                let avail = max - tstW;
+                let scTsk = (tskF > 0) ? (tskR/tskF)*avail : 0;
+                return (scTsk + tstS).toFixed(2);
+            };
+            const getLiveSubjectTotal = (s) => { let tot = getLiveExamTotal(s.midterm) + getLiveExamTotal(s.final); s.units.forEach(u => tot += parseFloat(getLiveUnitTotal(u))); return tot; };
+            
+            const saveScores = async () => {
+                loading.value = true;
+                const processed = editingSubjects.value.map(s => { 
+                    if(!s.owner) s.owner = user.value.email; 
+                    s.midterm.calcScore = getLiveExamTotal(s.midterm); 
+                    s.final.calcScore = getLiveExamTotal(s.final); 
+                    s.units.forEach(u => u.totalScore = parseFloat(getLiveUnitTotal(u))); 
+                    return s; 
+                });
+                const col = db.collection('artifacts').doc(APP_ID).collection('public').doc('data').collection('students');
+                const batch = db.batch();
+                
+                if(isClassMode.value) {
+                    const targets = students.value.filter(s => String(s.classLevel).replace('ม.','') == currentRoom.value.level && [String(currentRoom.value.room), ...selectedSyncRooms.value.map(String)].includes(String(s.room)));
+                    
+                    targets.forEach(st => {
+                        let subjects = [...(st.subjects||[])];
+                        
+                        const processedNames = processed.map(p => p.name);
+                        subjects = subjects.filter(s => {
+                            // If user has permission to edit this subject, allow deletion if it's missing from processed list
+                            if (canEdit(s)) return processedNames.includes(s.name);
+                            return true; 
+                        });
+
+                        processed.forEach(templateSub => {
+                            const idx = subjects.findIndex(s => s.name === templateSub.name);
+                            if(idx > -1) {
+                                // If authorized, merge
+                                if(canEdit(subjects[idx])) {
+                                    let newSub = JSON.parse(JSON.stringify(templateSub));
+                                    newSub.midterm.mcqScore = subjects[idx].midterm?.mcqScore || 0;
+                                    newSub.midterm.writeScore = subjects[idx].midterm?.writeScore || 0;
+                                    newSub.final.mcqScore = subjects[idx].final?.mcqScore || 0;
+                                    newSub.final.writeScore = subjects[idx].final?.writeScore || 0;
+                                    newSub.units.forEach((nu, uIdx) => {
+                                        if(subjects[idx].units?.[uIdx]) {
+                                            nu.tasks.forEach((nt, tIdx) => nt.score = subjects[idx].units[uIdx].tasks?.[tIdx]?.score || 0);
+                                            nu.tests.forEach((ntt, tIdx) => ntt.rawScore = subjects[idx].units[uIdx].tests?.[tIdx]?.rawScore || 0);
+                                        }
+                                    });
+                                    newSub.midterm.calcScore = getLiveExamTotal(newSub.midterm);
+                                    newSub.final.calcScore = getLiveExamTotal(newSub.final);
+                                    newSub.units.forEach(u => u.totalScore = parseFloat(getLiveUnitTotal(u)));
+                                    subjects[idx] = newSub;
+                                }
+                            } else {
+                                subjects.push(JSON.parse(JSON.stringify(templateSub)));
+                            }
+                        });
+                        batch.update(col.doc(st.id), { subjects: subjects });
+                    });
+                } else {
+                    batch.update(col.doc(editingStudent.value.id), { subjects: processed });
+                }
+                
+                await batch.commit(); modals.score = false; loading.value = false; alert('Saved');
+            };
+            // ตรวจสอบสิทธิ์แก้ไขในโหมดตาราง
+const canEditBatch = computed(() => {
+    // ถ้าไม่มีวิชาที่เลือก หรือไม่มีฟังก์ชันตรวจสอบ ให้แก้ไขไม่ได้ไว้ก่อน
+    if (!selectedBatchSubject.value || typeof canEdit !== 'function') return false;
+    
+    // หาวิชาตัวอย่างจากนักเรียนคนใดก็ได้ที่มีวิชานี้ (เพื่อเอาข้อมูล owner/editors มาเช็ค)
+    const subjectSample = filteredStudents.value
+        .flatMap(s => s.subjects || [])
+        .find(s => s.name === selectedBatchSubject.value);
+
+    // ถ้าเจอวิชา ให้ใช้ฟังก์ชัน canEdit ตรวจสอบสิทธิ์
+    return subjectSample ? canEdit(subjectSample) : false;
+});
+
+            // BATCH MODE Logic
+            const openBatchModeModal = () => modals.batchSelect = true;
+            const enterBatchMode = (subName) => {
+    // 1. ค้นหาวิชาต้นแบบ
+    const templateStudent = filteredStudents.value.find(s => s.subjects?.find(sb => sb.name === subName));
+    if (!templateStudent) {
+        return alert('ไม่พบข้อมูลรายวิชาต้นแบบ');
+    }
+
+    const templateSub = templateStudent.subjects.find(sb => sb.name === subName);
+
+    // --- ส่วนที่แก้ไข: กำหนดอีเมลที่เป็น Admin ตัวจริง (แก้ไข/เพิ่มอีเมลได้ที่นี่) ---
+    const superAdmins = ['39220@spt.ac.th']; // ใส่อีเมลแอดมินที่ต้องการให้เข้าได้ทุกวิชา
+    const isSuperAdmin = user.value && superAdmins.includes(user.value.email);
+
+    // 2. ตรวจสอบสิทธิ์แบบเข้มงวด
+    // เงื่อนไข: ถ้าไม่ใช่ Super Admin และ (ไม่ใช่เจ้าของ หรือ ผู้ร่วมสอน) -> ห้ามเข้า
+    if (!isSuperAdmin && !canEdit(templateSub)) {
+        alert('⛔ คุณไม่มีสิทธิ์เข้าถึงข้อมูลรายวิชานี้ (เฉพาะผู้สอนเท่านั้น)');
+        return; // ดีดออกทันที
+    }
+
+    // 3. ถ้าผ่านการตรวจสอบ ให้ทำงานต่อ...
+    selectedBatchSubject.value = subName;
+    modals.batchSelect = false;
+                const cols = [];
+                templateSub.units.forEach((u, uIdx) => {
+                    u.tasks.forEach((t, tIdx) => { cols.push({ label: `${u.name}-${t.name}`, full: t.fullScore, key: `u${uIdx}_tsk${tIdx}`, type:'task', uIdx, tIdx }); });
+                    u.tests.forEach((t, tIdx) => { cols.push({ label: `${u.name}-${t.name}`, full: t.rawFull, key: `u${uIdx}_tst${tIdx}`, type:'test', uIdx, tIdx }); });
+                });
+                cols.push({ label: 'Mid-MCQ', full: templateSub.midterm.mcqFull, key: 'mid_mcq', type:'exam_mcq', ex:'midterm' });
+                cols.push({ label: 'Mid-Write', full: templateSub.midterm.writeFull, key: 'mid_wr', type:'exam_wr', ex:'midterm' });
+                cols.push({ label: 'Fin-MCQ', full: templateSub.final.mcqFull, key: 'fin_mcq', type:'exam_mcq', ex:'final' });
+                cols.push({ label: 'Fin-Write', full: templateSub.final.writeFull, key: 'fin_wr', type:'exam_wr', ex:'final' });
+                batchColumns.value = cols;
+                batchStudents.value = filteredStudents.value.map(s => {
+                    const subj = s.subjects?.find(sb => sb.name === subName);
+                    const scores = {};
+                    if(subj) cols.forEach(col => {
+                        if(col.type === 'task') scores[col.key] = subj.units[col.uIdx]?.tasks[col.tIdx]?.score || 0;
+                        else if(col.type === 'test') scores[col.key] = subj.units[col.uIdx]?.tests[col.tIdx]?.rawScore || 0;
+                        else if(col.type === 'exam_mcq') scores[col.key] = subj[col.ex]?.mcqScore || 0;
+                        else if(col.type === 'exam_wr') scores[col.key] = subj[col.ex]?.writeScore || 0;
+                    });
+                    return { id: s.id, firstName: s.firstName, lastName: s.lastName, prefix: s.prefix, number: s.number, scores, hasSubject: !!subj, originalSubj: subj ? JSON.parse(JSON.stringify(subj)) : null };
+                });
+                view.value = 'batch_view';
+            };
+            const calculateBatchRowTotal = (rowStudent) => {
+                if(!rowStudent.hasSubject || !rowStudent.originalSubj) return 0;
+                const tempSub = rowStudent.originalSubj; 
+                batchColumns.value.forEach(col => {
+                    const val = rowStudent.scores[col.key] || 0;
+                    if(col.type === 'task' && tempSub.units[col.uIdx]?.tasks[col.tIdx]) tempSub.units[col.uIdx].tasks[col.tIdx].score = val;
+                    if(col.type === 'test' && tempSub.units[col.uIdx]?.tests[col.tIdx]) tempSub.units[col.uIdx].tests[col.tIdx].rawScore = val;
+                    if(col.type === 'exam_mcq') tempSub[col.ex].mcqScore = val;
+                    if(col.type === 'exam_wr') tempSub[col.ex].writeScore = val;
+                });
+                return getLiveSubjectTotal(tempSub);
+            };
+            const saveBatchScores = async () => {
+                loading.value = true; const batch = db.batch(); const col = db.collection('artifacts').doc(APP_ID).collection('public').doc('data').collection('students');
+                const templateStudent = filteredStudents.value.find(s => s.subjects?.find(sb => sb.name === selectedBatchSubject.value));
+                const templateSubStructure = templateStudent ? templateStudent.subjects.find(sb => sb.name === selectedBatchSubject.value) : null;
+                batchStudents.value.forEach(row => {
+                    const studentDoc = students.value.find(s => s.id === row.id);
+                    if(!studentDoc) return;
+                    let subjects = studentDoc.subjects || [];
+                    let targetSub = subjects.find(sb => sb.name === selectedBatchSubject.value);
+                    if(!targetSub && templateSubStructure) { targetSub = JSON.parse(JSON.stringify(templateSubStructure)); targetSub.units.forEach(u => { u.tasks.forEach(t=>t.score=0); u.tests.forEach(t=>t.rawScore=0); }); targetSub.midterm.mcqScore=0; targetSub.midterm.writeScore=0; targetSub.final.mcqScore=0; targetSub.final.writeScore=0; subjects.push(targetSub); }
+                    if(targetSub) {
+                        if(!canEdit(targetSub)) return;
+                        batchColumns.value.forEach(col => {
+                            const val = row.scores[col.key]; if(typeof val !== 'number') return;
+                            if(col.type === 'task' && targetSub.units[col.uIdx]?.tasks[col.tIdx]) targetSub.units[col.uIdx].tasks[col.tIdx].score = val;
+                            else if(col.type === 'test' && targetSub.units[col.uIdx]?.tests[col.tIdx]) targetSub.units[col.uIdx].tests[col.tIdx].rawScore = val;
+                            else if(col.type === 'exam_mcq') targetSub[col.ex].mcqScore = val;
+                            else if(col.type === 'exam_wr') targetSub[col.ex].writeScore = val;
+                        });
+                        targetSub.midterm.calcScore = getLiveExamTotal(targetSub.midterm); targetSub.final.calcScore = getLiveExamTotal(targetSub.final); targetSub.units.forEach(u => u.totalScore = parseFloat(getLiveUnitTotal(u)));
+                        batch.update(col.doc(row.id), { subjects: subjects });
+                    }
+                });
+                await batch.commit(); loading.value = false; alert('Saved Batch Scores'); view.value = 'admin_students';
+            };
+
+            // Smart Import
+            const openImportModal = () => modals.import = true;
+            const downloadTemplate = () => { const csv = "\uFEFFStudentId,Subject,Credit,Type,UnitName,ItemName,Score,FullScore,Weight\n12345,Math,1.5,Task,Unit1,Homework1,9,10,0\n12345,Math,1.5,Test,Unit1,Quiz1,8,10,5\n12345,Math,1.5,Mid_MCQ,-,-,15,20,10"; const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' }); const u = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = u; a.download = "template.csv"; a.click(); };
+            const handleAdvancedImport = (e) => {
+                const file = e.target.files[0]; if(!file) return; const r = new FileReader();
+                r.onload = async (evt) => {
+                    const lines = evt.target.result.split('\n'); const updates = {};
+                    for(let i=1; i<lines.length; i++) {
+                        const cols = lines[i].split(',').map(c=>c.trim()); if(cols.length < 9) continue;
+                        const [sid, subName, cred, type, uName, itemName, sc, full, wt] = cols; if(!sid) continue;
+                        if(!updates[sid]) updates[sid] = []; updates[sid].push({subName, cred, type, uName, itemName, sc:parseFloat(sc)||0, full:parseFloat(full)||0, wt:parseFloat(wt)||0});
+                    }
+                    loading.value = true; const batch = db.batch(); const col = db.collection('artifacts').doc(APP_ID).collection('public').doc('data').collection('students');
+                    Object.keys(updates).forEach(sid => {
+                        const student = students.value.find(s => s.studentId === sid);
+                        if(student) {
+                            let subjects = JSON.parse(JSON.stringify(student.subjects || [])); const myRows = updates[sid]; const subRows = {};
+                            myRows.forEach(r => { if(!subRows[r.subName]) subRows[r.subName]=[]; subRows[r.subName].push(r); });
+                            Object.keys(subRows).forEach(sName => {
+                                const rows = subRows[sName]; let subj = subjects.find(s => s.name === sName);
+                                if(!subj) { subj = { name: sName, credit: rows[0].cred, owner: user.value.email, units: [], midterm: {mcqScore:0,mcqFull:0,mcqWeight:0,writeScore:0,writeFull:0,writeWeight:0,calcScore:0}, final: {mcqScore:0,mcqFull:0,mcqWeight:0,writeScore:0,writeFull:0,writeWeight:0,calcScore:0} }; subjects.push(subj); }
+                                rows.forEach(row => {
+                                    if(row.type === 'Task' || row.type === 'Test') {
+                                        let unit = subj.units.find(u => u.name === row.uName); if(!unit) { unit = {name: row.uName, maxScore: 0, tasks:[], tests:[], totalScore:0}; subj.units.push(unit); }
+                                        if(row.type==='Task') { let task = unit.tasks.find(t => t.name === row.itemName); if(task) { task.score = row.sc; task.fullScore = row.full; } else unit.tasks.push({ name: row.itemName, score: row.sc, fullScore: row.full }); }
+                                        else { let test = unit.tests.find(t => t.name === row.itemName); if(test) { test.rawScore = row.sc; test.rawFull = row.full; test.weightFull = row.wt; } else unit.tests.push({ name: row.itemName, rawScore: row.sc, rawFull: row.full, weightFull: row.wt }); }
+                                    } else if (row.type.includes('Mid')) { if(row.type.includes('MCQ')) { subj.midterm.mcqScore = row.sc; subj.midterm.mcqFull = row.full; subj.midterm.mcqWeight = row.wt; } if(row.type.includes('Write')) { subj.midterm.writeScore = row.sc; subj.midterm.writeFull = row.full; subj.midterm.writeWeight = row.wt; } }
+                                    else if (row.type.includes('Fin')) { if(row.type.includes('MCQ')) { subj.final.mcqScore = row.sc; subj.final.mcqFull = row.full; subj.final.mcqWeight = row.wt; } if(row.type.includes('Write')) { subj.final.writeScore = row.sc; subj.final.writeFull = row.full; subj.final.writeWeight = row.wt; } }
+                                });
+                                subj.midterm.calcScore = getLiveExamTotal(subj.midterm); subj.final.calcScore = getLiveExamTotal(subj.final); subj.units.forEach(u => u.totalScore = parseFloat(getLiveUnitTotal(u)));
+                            });
+                            batch.update(db.collection('artifacts').doc(APP_ID).collection('public').doc('data').collection('students').doc(student.id), { subjects });
+                        }
+                    });
+                    await batch.commit(); modals.import = false; loading.value = false; alert('Import Merged Successfully');
+                };
+                r.readAsText(file);
+            };
+
+            // --- ส่วน Export CSV (แก้ไขแล้วสำหรับ Reactive) ---
+            
+            const openExportModal = () => {
+    if (!filteredStudents.value.length) return alert('ไม่พบรายชื่อนักเรียนในห้องนี้');
+    
+    // ตรวจสอบสิทธิ์เพื่อตั้งค่าเริ่มต้น
+    if (isAdmin.value) {
+        selectedExportSubject.value = 'All'; // Admin เริ่มที่ All
+    } else {
+        // ครูทั่วไป เริ่มที่วิชาแรกที่มี (ถ้าไม่มีให้เป็นค่าว่าง)
+        selectedExportSubject.value = uniqueSubjectsInRoom.value.length > 0 ? uniqueSubjectsInRoom.value[0] : '';
+    }
+    
+    // เปิด Modal (ใช้แบบ reactive หรือ ref ตามที่คุณใช้อยู่)
+    if (modals.value) modals.value.export = true; 
+    else modals.export = true;
+};
+
+                    const executeExport = () => {
+            const list = filteredStudents.value;
+            if(list.length === 0) return alert('ไม่พบข้อมูลนักเรียน (No Data)');
+            
+            const targetSub = selectedExportSubject.value;
+            if(!targetSub) return alert('กรุณาเลือกรูปแบบการส่งออก');
+
+            // 1. กำหนดรายวิชาที่จะส่งออก (ถ้าเลือก All ให้ดึงทุกวิชามาทำทีละวิชา)
+            let subjectsToExport = [];
+            if(targetSub === 'All') {
+                subjectsToExport = uniqueSubjectsInRoom.value;
+            } else {
+                subjectsToExport = [targetSub];
+            }
+
+            if(subjectsToExport.length === 0) return alert('ไม่พบรายวิชาที่จะส่งออก');
+
+            // 2. วนลูปสร้างและดาวน์โหลดไฟล์แยกตามรายวิชา
+            subjectsToExport.forEach(subjectName => {
+                
+                // --- ขั้นตอน A: สร้าง Schema (โครงสร้างคอลัมน์) ของวิชานั้นๆ ---
+                let unitSchema = [];
+                list.forEach(s => {
+                    if (!s.isPublished && (typeof isAdmin !== 'undefined' && isAdmin.value === false)) return;
+                    if(s.subjects) s.subjects.forEach(sub => {
+                        // กรองเฉพาะวิชาที่กำลังวนลูปอยู่
+                        if(sub.name === subjectName) {
+                            if(sub.units) sub.units.forEach((u, i) => {
+                                if(!unitSchema[i]) unitSchema[i] = { name: u.name || `Unit ${i+1}`, tasks: [], tests: [] };
+                                if(u.name && unitSchema[i].name.startsWith('Unit ')) unitSchema[i].name = u.name;
+                                
+                                // เก็บชื่อชิ้นงาน (Tasks) ที่มากที่สุด
+                                if(u.tasks) u.tasks.forEach((t, ti) => {
+                                    if(!unitSchema[i].tasks[ti]) unitSchema[i].tasks[ti] = t.name || `Task ${ti+1}`;
+                                });
+                                
+                                // เก็บชื่อการสอบย่อย (Tests) ที่มากที่สุด
+                                if(u.tests) u.tests.forEach((t, ti) => {
+                                    if(!unitSchema[i].tests[ti]) unitSchema[i].tests[ti] = t.name || `Test ${ti+1}`;
+                                });
+                            });
+                        }
+                    });
+                });
+
+                // --- ขั้นตอน B: สร้าง Header ของไฟล์ CSV ---
+                let csv = "\uFEFFStudentId,Name,Subject";
+                unitSchema.forEach(u => {
+                    csv += `,${u.name} (Total)`;
+                    u.tasks.forEach(t => csv += `,${u.name} - ${t}`);
+                    u.tests.forEach(t => csv += `,${u.name} - ${t}`);
+                });
+                csv += ",Midterm (Total),Midterm (MCQ),Midterm (Write),Final (Total),Final (MCQ),Final (Write),Total Score,Grade\n";
+
+                // --- ขั้นตอน C: ดึงข้อมูลคะแนนลงตาราง ---
+                let hasData = false;
+                list.forEach(s => {
+                    if (!s.isPublished && (typeof isAdmin !== 'undefined' && isAdmin.value === false)) return;
+                    
+                    // หาข้อมูลวิชานั้นๆ ของนักเรียนคนนี้
+                    const sub = s.subjects ? s.subjects.find(sb => sb.name === subjectName) : null;
+                    
+                    if(sub) {
+                        hasData = true;
+                        // ข้อมูลทั่วไป
+                        let row = `"${s.studentId}","${s.prefix}${s.firstName} ${s.lastName}","${sub.name}"`;
+
+                        // คะแนนเก็บ (Units)
+                        unitSchema.forEach((uSchema, uIdx) => {
+                            const u = sub.units && sub.units[uIdx];
+                            
+                            // คะแนนรวมหน่วย
+                            row += `,${u ? calcUnitTotal(u) : 0}`;
+                            
+                            // คะแนนงานย่อย
+                            uSchema.tasks.forEach((tSchema, tIdx) => {
+                                const t = u && u.tasks && u.tasks[tIdx];
+                                row += `,${t ? (t.score || 0) : 0}`;
+                            });
+                            
+                            // คะแนนสอบย่อย
+                            uSchema.tests.forEach((tSchema, tIdx) => {
+                                const t = u && u.tests && u.tests[tIdx];
+                                row += `,${t ? (t.rawScore || t.score || 0) : 0}`;
+                            });
+                        });
+
+                        // คะแนนกลางภาค
+                        const mid = sub.midterm || {};
+                        row += `,${parseFloat(mid.calcScore||0).toFixed(2)}`;
+                        row += `,${mid.mcqScore||0}`;
+                        row += `,${mid.writeScore||0}`;
+
+                        // คะแนนปลายภาค
+                        const fin = sub.final || {};
+                        row += `,${parseFloat(fin.calcScore||0).toFixed(2)}`;
+                        row += `,${fin.mcqScore||0}`;
+                        row += `,${fin.writeScore||0}`;
+
+                        // คะแนนรวมและเกรด
+                        const total = calculateSubjectTotal(sub);
+                        const grade = calculateGrade(total);
+                        row += `,${total.toFixed(2)},"${grade}"`;
+
+                        csv += row + "\n";
+                    }
+                });
+
+                // --- ขั้นตอน D: สั่งดาวน์โหลดไฟล์ ---
+                if(hasData) {
+                    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    // ตั้งชื่อไฟล์: Score_ชื่อวิชา_ชั้น-ห้อง.csv
+                    link.setAttribute('download', `Score_${subjectName}_${currentRoom.value.level}-${currentRoom.value.room}.csv`);
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                }
+            });
+        };
+            // ฟังก์ชันสำหรับจัดการการวางข้อมูลแบบตาราง (Excel/Sheets)
+const handleBatchPaste = (e, startRowIdx, startColIdx) => {
+    e.preventDefault(); // ป้องกันการวางแบบปกติ (ที่จะลงในช่องเดียว)
+    
+    // ดึงข้อมูล text จาก Clipboard
+    const clipboardData = (e.clipboardData || window.clipboardData).getData('text');
+    if (!clipboardData) return;
+
+    // แยกข้อมูลเป็นแถว (รองรับทั้ง \r\n และ \n)
+    const rows = clipboardData.split(/\r\n|\n|\r/).filter(row => row.trim() !== '');
+
+    rows.forEach((rowText, rOffset) => {
+        const targetRowIdx = startRowIdx + rOffset;
+        
+        // ถ้าเกินจำนวนนักเรียนที่มี ให้หยุด
+        if (targetRowIdx >= batchStudents.value.length) return;
+
+        // แยกข้อมูลในแถวเป็นคอลัมน์ (ด้วย Tab \t)
+        const cells = rowText.split('\t');
+        const student = batchStudents.value[targetRowIdx];
+
+        cells.forEach((cellValue, cOffset) => {
+            const targetColIdx = startColIdx + cOffset;
+            
+            // ถ้าเกินจำนวนคอลัมน์ที่มี ให้หยุด
+            if (targetColIdx >= batchColumns.value.length) return;
+
+            const col = batchColumns.value[targetColIdx];
+            
+            // แปลงค่าเป็นตัวเลข (ถ้าเป็นค่าว่างให้เป็น 0)
+            let val = cellValue.trim();
+            if (val === '') val = 0;
+            else if (!isNaN(parseFloat(val))) val = parseFloat(val);
+
+            // บันทึกค่าลงในตัวแปร student
+            student.scores[col.key] = val;
+        });
+    });
+};
+
+
+
+            const clearRoomData = async () => { if(confirm('Clear Room?')) { loading.value=true; const b=db.batch(); filteredStudents.value.forEach(s=>b.delete(db.collection('artifacts').doc(APP_ID).collection('public').doc('data').collection('students').doc(s.id))); await b.commit(); loading.value=false; } };
+            const exportRosterCSV = () => { let c="\uFEFFStudentId,Prefix,FirstName,LastName,Class,Room,Number\n"; filteredStudents.value.forEach(s=>c+=`${s.studentId},${s.prefix},${s.firstName},${s.lastName},${s.classLevel},${s.room},${s.number}\n`); const b=new Blob([c],{type:'text/csv'}); const u=URL.createObjectURL(b); const a=document.createElement('a'); a.href=u; a.download=`roster_${currentRoom.value.level}_${currentRoom.value.room}.csv`; a.click(); };
+            const openStudentModal = (s=null) => { editingStudent.value=s; Object.assign(studentForm, s || {studentId:'',prefix:'ด.ช.',firstName:'',lastName:'',classLevel:currentRoom.value.level,room:currentRoom.value.room,number:''}); modals.student=true; };
+            const saveStudent = async () => { loading.value=true; const col=db.collection('artifacts').doc(APP_ID).collection('public').doc('data').collection('students'); const p={...studentForm,isPublished:true}; if(editingStudent.value) await col.doc(editingStudent.value.id).update(p); else await col.add({...p,subjects:[]}); modals.student=false; loading.value=false; };
+            const deleteStudent = async(id) => { if(confirm('Delete?')) await db.collection('artifacts').doc(APP_ID).collection('public').doc('data').collection('students').doc(id).delete(); };
+            const togglePublish = async(s) => await db.collection('artifacts').doc(APP_ID).collection('public').doc('data').collection('students').doc(s.id).update({isPublished:!s.isPublished});
+            const importCSVClick = () => document.getElementById('csvInput').click();
+            const importCSV = (e) => { const f=e.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=async(evt)=>{ const l=evt.target.result.split('\n'); const b=db.batch(); const c=db.collection('artifacts').doc(APP_ID).collection('public').doc('data').collection('students'); for(let i=1;i<l.length;i++){ const r=l[i].split(','); if(r.length>=7) b.set(c.doc(),{studentId:r[0].trim(),prefix:r[1].trim(),firstName:r[2].trim(),lastName:r[3].trim(),classLevel:r[4].trim(),room:r[5].trim(),number:r[6].trim(),isPublished:true,subjects:[]}); } await b.commit(); alert('Done'); }; r.readAsText(f); };
+
+            const calcUnitTotal = (u) => (parseFloat(u.totalScore)||0).toFixed(2);
+            const calculateSubjectTotal = (s) => { let t=(parseFloat(s.midterm?.calcScore)||0)+(parseFloat(s.final?.calcScore)||0); s.units.forEach(u=>t+=(parseFloat(u.totalScore)||0)); return t; };
+            const calculateStudentViewTotal = (s) => { let t=(parseFloat(s.midterm?.calcScore)||0); if(!s.hideFinal) t+=(parseFloat(s.final?.calcScore)||0); s.units.forEach(u=>t+=(parseFloat(u.totalScore)||0)); return t; };
+            const calculateGrade = (sc) => { if(sc>=80)return 4; if(sc>=75)return 3.5; if(sc>=70)return 3; if(sc>=65)return 2.5; if(sc>=60)return 2; if(sc>=55)return 1.5; if(sc>=50)return 1; return 0; };
+            const getGradeColor = (g) => g>=3?'bg-green-500':g>=2?'bg-yellow-400':g>=1?'bg-orange-400':'bg-red-500';
+            const calculateGPA = (subs) => { if(!subs||!subs.length)return "0.00"; let p=0,c=0,w=false; subs.forEach(s=>{ if(s.hideFinal)w=true; let cr=parseFloat(s.credit)||1; p+=calculateGrade(calculateSubjectTotal(s))*cr; c+=cr; }); if(w)return "รอประกาศ"; return c?(p/c).toFixed(2):"0.00"; };
+
+            return {
+                view, loading, loadingText, showRetry, forceStopLoading, user, isAdmin, searchId, studentResult, roomGroups, currentRoom, filteredStudents, modals, editingStudent, editingSubjects, isClassMode, selectedSyncRooms, syncAllRooms, studentForm, loginForm, selectedExportSubject, uniqueSubjectsInRoom, selectedBatchSubject, batchColumns, batchStudents,
+                goHome, login, logout, handleLogin, enterRoom, searchStudent, openStudentModal, saveStudent, deleteStudent, togglePublish, toggleSubject, openScoreModal, openClassMode, addSubject, removeSubject, 
+                addUnit:(i)=>editingSubjects.value[i].units.push({name:'Unit',maxScore:null,tasks:[],tests:[]}), 
+                saveScores, toggleSyncAll, importCSVClick, importCSV, exportRosterCSV, clearRoomData, 
+                openImportModal, downloadTemplate, handleAdvancedImport, openExportModal, executeExport,handleBatchPaste,
+                openBatchModeModal, enterBatchMode, saveBatchScores, calculateBatchRowTotal,
+                calcUnitTotal, calculateSubjectTotal, canEditBatch, calculateStudentViewTotal, calculateGrade, getGradeColor, calculateGPA, getLiveSubjectTotal, getLiveUnitTotal, getLiveExamTotal, canEdit, addEditor, removeEditor, focusNextRow
+            };
+        }
+    }).mount('#app');
+</script>
+</body>
+</html>
