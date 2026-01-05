@@ -514,16 +514,25 @@
                             <tr v-for="(student, sIdx) in batchStudents" :key="student.id" class="hover:bg-gray-50 transition">
                                 <td class="sticky-left text-center text-gray-400 font-mono text-xs bg-white">{{ student.number }}</td>
                                 <td class="sticky-left left-[50px] bg-white font-medium text-gray-800 text-sm whitespace-nowrap pl-4 border-r-2 border-gray-200">{{ student.prefix }}{{ student.firstName }} {{ student.lastName }}</td>
-                                <td v-for="(col, cIdx) in batchColumns" :key="cIdx">
+                                <td v-for="(col, cIdx) in batchColumns" :key="cIdx" class="...">
+    
     <input 
-        v-model="student.scores[col.key]" 
-        @paste="handleBatchPaste($event, sIdx, cIdx)" 
-        type="number"
-        step="0.01" 
-        class="input-cell focus:ring-2 focus:ring-blue-500"
-        @focus="$event.target.select()" 
+        type="number" 
+        class="input-cell"
+        v-model="student.scores[col.key]"
+        
+        :id="'cell-' + sIdx + '-' + cIdx"
+        
+        @keydown.enter.prevent="focusNextRow(sIdx, cIdx)"
+        @keydown.down.prevent="focusNextRow(sIdx, cIdx)"
+        @keydown.up.prevent="focusPrevRow(sIdx, cIdx)"
+        
+        @paste="handleBatchPaste($event, sIdx, cIdx)"
+        @focus="$event.target.select()"
     >
+
 </td>
+
 
                                 <td class="text-center font-bold text-blue-600 bg-blue-50/30 border-l-2 border-blue-100">{{ calculateBatchRowTotal(student).toFixed(2) }}</td>
                                 <td class="text-center font-bold text-yellow-600 bg-yellow-50/30">{{ calculateGrade(calculateBatchRowTotal(student)) }}</td>
@@ -1217,44 +1226,71 @@ const canEditBatch = computed(() => {
             });
         };
             // ฟังก์ชันสำหรับจัดการการวางข้อมูลแบบตาราง (Excel/Sheets)
+// --- 1.1 ฟังก์ชันจัดการ Paste (แก้ไขใหม่) ---
 const handleBatchPaste = (e, startRowIdx, startColIdx) => {
-    e.preventDefault(); // ป้องกันการวางแบบปกติ (ที่จะลงในช่องเดียว)
-    
-    // ดึงข้อมูล text จาก Clipboard
+    e.preventDefault();
+    // ดึงข้อมูลจาก Clipboard
     const clipboardData = (e.clipboardData || window.clipboardData).getData('text');
     if (!clipboardData) return;
 
-    // แยกข้อมูลเป็นแถว (รองรับทั้ง \r\n และ \n)
-    const rows = clipboardData.split(/\r\n|\n|\r/).filter(row => row.trim() !== '');
+    // แยกแถว (รองรับทั้ง Windows/Mac/Linux)
+    const rows = clipboardData.split(/\r\n|\n|\r/);
 
-    rows.forEach((rowText, rOffset) => {
-        const targetRowIdx = startRowIdx + rOffset;
-        
-        // ถ้าเกินจำนวนนักเรียนที่มี ให้หยุด
-        if (targetRowIdx >= batchStudents.value.length) return;
+    rows.forEach((rowStr, rOffset) => {
+        // ถ้าแถวว่างเปล่า (เช่น บรรทัดสุดท้ายที่มักแถมมาตอน Copy) ให้ข้าม
+        if (!rowStr && rOffset === rows.length - 1) return;
 
-        // แยกข้อมูลในแถวเป็นคอลัมน์ (ด้วย Tab \t)
-        const cells = rowText.split('\t');
-        const student = batchStudents.value[targetRowIdx];
+        const cells = rowStr.split('\t'); // แยกคอลัมน์ด้วย Tab
+        const targetRow = startRowIdx + rOffset;
 
-        cells.forEach((cellValue, cOffset) => {
-            const targetColIdx = startColIdx + cOffset;
-            
-            // ถ้าเกินจำนวนคอลัมน์ที่มี ให้หยุด
-            if (targetColIdx >= batchColumns.value.length) return;
+        // ตรวจสอบว่าแถวยังอยู่ในขอบเขตตาราง
+        if (targetRow < batchStudents.value.length) {
+            cells.forEach((cellStr, cOffset) => {
+                const targetCol = startColIdx + cOffset;
 
-            const col = batchColumns.value[targetColIdx];
-            
-            // แปลงค่าเป็นตัวเลข (ถ้าเป็นค่าว่างให้เป็น 0)
-            let val = cellValue.trim();
-            if (val === '') val = 0;
-            else if (!isNaN(parseFloat(val))) val = parseFloat(val);
+                // ตรวจสอบว่าคอลัมน์ยังอยู่ในขอบเขต
+                if (targetCol < batchColumns.value.length) {
+                    const colKey = batchColumns.value[targetCol].key;
+                    
+                    // --- จุดที่แก้ไข: ตรวจสอบค่าว่าง ---
+                    let val = cellStr.trim();
+                    if (val === '') {
+                        val = 0; // ถ้าเป็นค่าว่าง ให้ใส่ 0
+                    }
+                    // -------------------------------
 
-            // บันทึกค่าลงในตัวแปร student
-            student.scores[col.key] = val;
-        });
+                    // บันทึกค่าลงในตัวแปร batchStudents
+                    batchStudents.value[targetRow].scores[colKey] = val;
+                }
+            });
+        }
     });
 };
+
+// --- 1.2 ฟังก์ชันเลื่อน Focus (เพิ่มใหม่) ---
+const focusNextRow = (rowIdx, colIdx) => {
+    const nextRow = rowIdx + 1;
+    if (nextRow < batchStudents.value.length) {
+        // อ้างอิง ID ตามรูปแบบที่ตั้งไว้ใน HTML
+        const el = document.getElementById(`cell-${nextRow}-${colIdx}`);
+        if (el) {
+            el.focus();
+            el.select(); // คลุมดำข้อความเพื่อให้พิมพ์ทับได้เลย
+        }
+    }
+};
+
+const focusPrevRow = (rowIdx, colIdx) => {
+    const prevRow = rowIdx - 1;
+    if (prevRow >= 0) {
+        const el = document.getElementById(`cell-${prevRow}-${colIdx}`);
+        if (el) {
+            el.focus();
+            el.select();
+        }
+    }
+};
+
 
 
 
@@ -1281,7 +1317,7 @@ const handleBatchPaste = (e, startRowIdx, startColIdx) => {
                 saveScores, toggleSyncAll, importCSVClick, importCSV, exportRosterCSV, clearRoomData, 
                 openImportModal, downloadTemplate, handleAdvancedImport, openExportModal, executeExport,handleBatchPaste,
                 openBatchModeModal, enterBatchMode, saveBatchScores, calculateBatchRowTotal,
-                calcUnitTotal, calculateSubjectTotal, canEditBatch, calculateStudentViewTotal, calculateGrade, getGradeColor, calculateGPA, getLiveSubjectTotal, getLiveUnitTotal, getLiveExamTotal, canEdit, addEditor, removeEditor, focusNextRow
+                calcUnitTotal, calculateSubjectTotal, canEditBatch, calculateStudentViewTotal, calculateGrade, getGradeColor, calculateGPA, getLiveSubjectTotal, getLiveUnitTotal, getLiveExamTotal, canEdit, addEditor, removeEditor, focusNextRow, focusPrevRow
             };
         }
     }).mount('#app');
