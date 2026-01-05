@@ -757,16 +757,16 @@
                     history.replaceState(null, null, ' '); // หน้าแรก
                 } 
                 else if (view.value === 'login') {
-                    history.replaceState(null, null, '#login');
+                    history.replaceState(null, null, '#/login');
                 }
                 else if (view.value === 'result' && searchId.value) {
-                    history.replaceState(null, null, `#result/${searchId.value}`);
+                    history.replaceState(null, null, `#/result/${searchId.value}`);
                 }
                 else if (view.value === 'admin_rooms') {
-                    history.replaceState(null, null, '#admin/rooms');
+                    history.replaceState(null, null, '#/admin/rooms');
                 }
                 else if (view.value === 'admin_students' && currentRoom.value) {
-                    history.replaceState(null, null, `#admin/room/${currentRoom.value.level}/${currentRoom.value.room}`);
+                    history.replaceState(null, null, `#/admin/room/${currentRoom.value.level}/${currentRoom.value.room}`);
                 }
             };
 
@@ -782,7 +782,7 @@
                 const hash = window.location.hash;
 
                 // กรณีหน้าผลการเรียน (#/result/XXXXX)
-                if (hash.startsWith('#result/')) {
+                if (hash.startsWith('#/result/')) {
                     const id = hash.split('/')[2];
                     if (id) {
                         searchId.value = id;
@@ -795,11 +795,11 @@
                     }
                 }
                 // กรณีหน้า Login
-                else if (hash === '#login') {
+                else if (hash === '#/login') {
                     view.value = 'login';
                 }
                 // กรณีหน้า Admin Rooms
-                else if (hash === '#admin/rooms') {
+                else if (hash === '#/admin/rooms') {
                     // รอเช็ค User ว่า Login หรือยัง
                     const checkAuth = setInterval(() => {
                         if (user.value) {
@@ -812,7 +812,7 @@
                     }, 200);
                 }
                 // กรณีหน้า Admin รายชื่อในห้อง (#/admin/room/M/R)
-                else if (hash.startsWith('#admin/room/')) {
+                else if (hash.startsWith('#/admin/room/')) {
                     const parts = hash.split('/');
                     const level = parts[3];
                     const roomNum = parts[4];
