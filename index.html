@@ -747,6 +747,103 @@
                     }
                 });
             });
+                        // ----------------------------------------------------
+            // [เริ่ม] ระบบ Hash URL เพื่อให้รีเฟรซแล้วไม่หลุด
+            // ----------------------------------------------------
+
+            // 1. ฟังก์ชันสำหรับเปลี่ยน URL ตามสถานะปัจจุบัน
+            const updateUrlHash = () => {
+                if (view.value === 'home') {
+                    history.replaceState(null, null, ' '); // หน้าแรก
+                } 
+                else if (view.value === 'login') {
+                    history.replaceState(null, null, '#login');
+                }
+                else if (view.value === 'result' && searchId.value) {
+                    history.replaceState(null, null, `#result/${searchId.value}`);
+                }
+                else if (view.value === 'admin_rooms') {
+                    history.replaceState(null, null, '#admin/rooms');
+                }
+                else if (view.value === 'admin_students' && currentRoom.value) {
+                    history.replaceState(null, null, `#admin/room/${currentRoom.value.level}/${currentRoom.value.room}`);
+                }
+            };
+
+            // 2. สั่งให้ทำงานเมื่อข้อมูลเปลี่ยน (Watch)
+            Vue.watch(view, updateUrlHash);
+            Vue.watch(() => currentRoom.value, updateUrlHash, { deep: true });
+            Vue.watch(studentResult, () => {
+                if (view.value === 'result') updateUrlHash();
+            });
+
+            // 3. ฟังก์ชันสำหรับอ่าน URL แล้วพาไปหน้านั้น (ใช้ตอนโหลดหน้าเว็บ)
+            const restoreStateFromHash = async () => {
+                const hash = window.location.hash;
+
+                // กรณีหน้าผลการเรียน (#/result/XXXXX)
+                if (hash.startsWith('#result/')) {
+                    const id = hash.split('/')[2];
+                    if (id) {
+                        searchId.value = id;
+                        // เรียกฟังก์ชันค้นหา (หาก searchStudent รอรับ event ให้ลองเรียกแบบไม่มี argument)
+                        try {
+                            await searchStudent();
+                        } catch (e) {
+                            console.log('Auto search error:', e);
+                        }
+                    }
+                }
+                // กรณีหน้า Login
+                else if (hash === '#login') {
+                    view.value = 'login';
+                }
+                // กรณีหน้า Admin Rooms
+                else if (hash === '#admin/rooms') {
+                    // รอเช็ค User ว่า Login หรือยัง
+                    const checkAuth = setInterval(() => {
+                        if (user.value) {
+                            view.value = 'admin_rooms';
+                            clearInterval(checkAuth);
+                        } else if (!loading.value && !user.value) {
+                            // ถ้าโหลดเสร็จแล้วแต่ไม่มี user ให้หยุดรอ
+                            clearInterval(checkAuth);
+                        }
+                    }, 200);
+                }
+                // กรณีหน้า Admin รายชื่อในห้อง (#/admin/room/M/R)
+                else if (hash.startsWith('#admin/room/')) {
+                    const parts = hash.split('/');
+                    const level = parts[3];
+                    const roomNum = parts[4];
+
+                    // รอข้อมูลห้องโหลดเสร็จ
+                    const checkData = setInterval(() => {
+                        if (roomGroups.value.length > 0) {
+                            const targetRoom = roomGroups.value.find(r => r.level == level && r.room == roomNum);
+                            if (targetRoom) {
+                                enterRoom(targetRoom);
+                            }
+                            clearInterval(checkData);
+                        }
+                        // Timeout กันค้าง
+                        if (!loading.value && roomGroups.value.length === 0) clearInterval(checkData);
+                    }, 500);
+                }
+            };
+
+            // 4. เรียกทำงานตอนเปิดเว็บ
+            Vue.onMounted(() => {
+                // รอเล็กน้อยให้ Firebase Initialize ก่อนเรียกคืนค่า
+                setTimeout(() => {
+                    restoreStateFromHash();
+                }, 500);
+            });
+
+            // ----------------------------------------------------
+            // [จบ] ระบบ Hash URL
+            // ----------------------------------------------------
+
 
 
 // อย่าลืมใส่ focusNextRow ใน return { ... } ที่ด้านล่างสุดของ script ด้วยครับ
