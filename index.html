@@ -887,14 +887,36 @@
             const logout = () => { auth.signOut(); goHome(); };
             const handleLogin = async () => { loading.value = true; try { await auth.signInWithEmailAndPassword(loginForm.email, loginForm.password); view.value = 'admin_rooms'; } catch(e) { alert('Login Failed'); loading.value = false; } };
             const enterRoom = (room) => { currentRoom.value = room; view.value = 'admin_students'; };
-            const searchStudent = async () => {
-                if(!searchId.value) return; loading.value = true;
+                        const searchStudent = async () => {
+                loading.value = true;
+                loadingText.value = 'กำลังค้นหาข้อมูล...';
+                
                 try {
-                    const snap = await db.collection('artifacts').doc(APP_ID).collection('public').doc('data').collection('students').where('studentId', '==', searchId.value).limit(1).get();
-                    if(snap.empty) alert('Not Found');
-                    else { const d = snap.docs[0].data(); if(!d.isPublished) alert('Not Published'); else { studentResult.value = {id:snap.docs[0].id, ...d}; if(studentResult.value.subjects) studentResult.value.subjects.forEach(s=>s.expanded=false); view.value='result'; } }
-                } catch(e) { alert('Error'); } loading.value = false;
+                    // [เทคนิค] ใช้ .where() เพื่อดึงมาแค่คนเดียว ไม่ดึงทั้งหมด
+                    // และใช้ .limit(1) เพื่อบอกว่าเจอคนเดียวก็พอแล้วไม่ต้องหาต่อ
+                    const snapshot = await db.collection('students')
+                                            .where('studentId', '==', searchId.value)
+                                            .limit(1) 
+                                            .get();
+
+                    if (snapshot.empty) {
+                        alert('ไม่พบข้อมูลนักเรียนเลขนี้');
+                        studentResult.value = null;
+                    } else {
+                        // เจอข้อมูลแล้ว เอามาใส่ตัวแปร
+                        studentResult.value = snapshot.docs[0].data();
+                        
+                        // ถ้าอยากให้โหลดรูปหรือข้อมูลย่อยๆ เร็วขึ้น ให้ดึงเฉพาะที่จำเป็น
+                        view.value = 'result';
+                    }
+                } catch (error) {
+                    console.error("Error loading:", error);
+                    alert('เกิดข้อผิดพลาดในการโหลดข้อมูล');
+                } finally {
+                    loading.value = false;
+                }
             };
+
 
             const toggleSubject = (s) => { if(studentResult.value) studentResult.value.subjects.forEach(sub => sub.expanded = false); s.expanded = !s.expanded; };
             
