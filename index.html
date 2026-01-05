@@ -719,13 +719,13 @@ db.enablePersistence()
       }
   });
  const auth = firebase.auth(); const APP_ID = 'score-spt-enterprise-super-admin-fixed-v2';
-    const { createApp, ref, reactive, computed, onMounted } = Vue;
+    const { createApp, ref, reactive, computed, onMounted, shallowRef } = Vue;
 
     createApp({
         setup() {
             const view = ref('home'); const loading = ref(true); const loadingText = ref('Connecting...'); const showRetry = ref(false);
             const user = ref(null); const isAdmin = computed(() => user.value && !user.value.isAnonymous);
-            const searchId = ref(''); const studentResult = ref(null); const students = ref([]); const currentRoom = ref(null);
+            const searchId = ref(''); const studentResult = ref(null); const students = shallowRef([]); const currentRoom = ref(null);
             
             const loginForm = reactive({ email: '', password: '' });
             const modals = reactive({ student: false, score: false, import: false, export: false, batchSelect: false });
