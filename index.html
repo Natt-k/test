@@ -1381,43 +1381,50 @@ const canEditBatch = computed(() => {
         };
             // ฟังก์ชันสำหรับจัดการการวางข้อมูลแบบตาราง (Excel/Sheets)
 // --- 1.1 ฟังก์ชันจัดการ Paste (แก้ไขใหม่) ---
-const handleBatchPaste = (e, rowIndex, colKey) => {
-    // 1. ป้องกันการวางแบบปกติ (เพื่อไม่ให้ซ้อนทับกัน)
+const handleBatchPaste = (e, startRowIdx, startColIdx) => {
+    // 1. ป้องกันการวางแบบปกติของ Browser (เพื่อไม่ให้ค่าซ้อนกัน)
     e.preventDefault();
-    
+
     // 2. ดึงข้อมูลจาก Clipboard
     const clipboardData = e.clipboardData || window.clipboardData;
     const pastedData = clipboardData.getData('Text');
 
+    if (!pastedData) return;
+
     // 3. แปลงข้อมูลเป็น Array (แยกบรรทัดด้วย \n และแยกคอลัมน์ด้วย \t)
     const rows = pastedData.split(/\r\n|\n|\r/).filter(row => row.trim() !== '');
-    
-    // 4. วนลูปอัปเดตข้อมูลใน batchStudents โดยตรง
-    rows.forEach((rowStr, rIdx) => {
-        const cols = rowStr.split('\t');
-        const targetRowIdx = rowIndex + rIdx;
 
-        // ตรวจสอบว่าแถวยังอยู่ในขอบเขตของข้อมูลที่มี
+    // 4. วนลูปเพื่ออัปเดตข้อมูลลงใน batchStudents (ตัวแปร Reactive)
+    rows.forEach((rowStr, rOffset) => {
+        const targetRowIdx = startRowIdx + rOffset;
+        
+        // ตรวจสอบว่าแถวที่จะวางยังอยู่ในขอบเขตของข้อมูลที่มี
         if (targetRowIdx < batchStudents.value.length) {
-            cols.forEach((value, cIdx) => {
-                // หา Key ของคอลัมน์ถัดไป (คุณอาจต้องเขียน Logic เพื่อหา colKey ถัดไป ถ้าตารางมีหลายคอลัมน์)
-                // สมมติว่าในมุมมองตาราง batchColumns เรียงลำดับอยู่แล้ว
-                const targetColIndex = batchColumns.value.findIndex(c => c.key === colKey) + cIdx;
-                
-                if (targetColIndex < batchColumns.value.length) {
-                    const targetColKey = batchColumns.value[targetColIndex].key;
-                    
-                    // --- จุดสำคัญ: อัปเดตที่ตัวแปร Vue (batchStudents) ---
-                    // ต้องแปลงค่าเป็นตัวเลขถ้าคอลัมน์นั้นเก็บคะแนน
-                    let finalValue = value.trim();
-                    if (!isNaN(parseFloat(finalValue))) {
-                        finalValue = parseFloat(finalValue);
+            const cells = rowStr.split('\t');
+            
+            cells.forEach((cellValue, cOffset) => {
+                const targetColIdx = startColIdx + cOffset;
+
+                // ตรวจสอบว่าคอลัมน์ที่จะวางยังอยู่ในขอบเขต
+                if (targetColIdx < batchColumns.value.length) {
+                    const targetCol = batchColumns.value[targetColIdx];
+                    const targetKey = targetCol.key; // Key ที่ใช้เก็บใน scores (เช่น u0_tst0, mid_mcq)
+
+                    // แปลงค่าให้ถูกต้อง (ตัวเลข หรือ ข้อความ)
+                    let finalValue = cellValue.trim();
+                    // ถ้าคอลัมน์เก็บคะแนน ลองแปลงเป็นตัวเลข
+                    if (finalValue !== '' && !isNaN(Number(finalValue))) {
+                        finalValue = Number(finalValue);
                     }
-                    
-                    // อัปเดตข้อมูล
-                    batchStudents.value[targetRowIdx].scores[targetColKey] = finalValue; 
-                    // หรือถ้าโครงสร้างข้อมูลไม่ได้เก็บใน scores ให้แก้ตามโครงสร้างจริง เช่น:
-                    // batchStudents.value[targetRowIdx][targetColKey] = finalValue;
+
+                    // --- จุดสำคัญ: อัปเดตข้อมูลที่ตัวแปร Vue โดยตรง ---
+                    // ตรวจสอบว่ามี object scores หรือไม่ ถ้าไม่มีให้สร้าง
+                    if (!batchStudents.value[targetRowIdx].scores) {
+                        batchStudents.value[targetRowIdx].scores = {};
+                    }
+
+                    // บันทึกค่าลงใน Model
+                    batchStudents.value[targetRowIdx].scores[targetKey] = finalValue;
                 }
             });
         }
