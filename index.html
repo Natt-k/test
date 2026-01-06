@@ -887,51 +887,68 @@
             const logout = () => { auth.signOut(); goHome(); };
             const handleLogin = async () => { loading.value = true; try { await auth.signInWithEmailAndPassword(loginForm.email, loginForm.password); view.value = 'admin_rooms'; } catch(e) { alert('Login Failed'); loading.value = false; } };
             const enterRoom = (room) => { currentRoom.value = room; view.value = 'admin_students'; };
-                        const searchStudent = async () => {
-                loading.value = true;
-                loadingText.value = 'กำลังค้นหาข้อมูล...';
-                studentResult.value = null; // เคลียร์ค่าเก่าก่อน
+                                    const searchStudent = async () => {
+                // 1. ตรวจสอบ APP_ID
+                if (typeof APP_ID === 'undefined' || !APP_ID) {
+                    alert('Error: ไม่พบตัวแปร APP_ID ในโค้ด (กรุณาประกาศ const APP_ID = "..." ที่ส่วนบนของ script)');
+                    return;
+                }
+
+                if (!searchId.value) { alert('กรุณากรอกรหัสนักเรียน'); return; }
                 
+                loading.value = true;
+                loadingText.value = 'กำลังค้นหา...';
+
                 try {
-                    const idStr = String(searchId.value).trim(); // แปลงเป็นข้อความ
-                    const idNum = Number(idStr); // แปลงเป็นตัวเลข (เผื่อใน DB เก็บเป็นตัวเลข)
+                    const idStr = String(searchId.value).trim(); // แบบข้อความ
+                    const idNum = Number(idStr); // แบบตัวเลข
 
-                    // 1. ลองค้นหาแบบข้อความ (String) ก่อน
-                    let snapshot = await db.collection('students')
-                                            .where('studentId', '==', idStr)
-                                            .limit(1) 
-                                            .get();
+                    // กำหนด Path ที่ยาวๆ ให้เป็นตัวแปร เพื่อความอ่านง่าย
+                    const studentsRef = db.collection('artifacts').doc(APP_ID).collection('public').doc('data').collection('students');
 
-                    // 2. ถ้าไม่เจอ และค่าที่กรอกเป็นตัวเลขได้ -> ลองค้นหาแบบตัวเลข (Number)
-                    if (snapshot.empty && !isNaN(idNum)) {
-                        snapshot = await db.collection('students')
-                                            .where('studentId', '==', idNum)
-                                            .limit(1) 
-                                            .get();
-                    }
-
-                    if (snapshot.empty) {
-                        alert('ไม่พบข้อมูลนักเรียนเลขนี้: ' + idStr);
-                    } else {
-                        // เจอข้อมูล
-                        studentResult.value = snapshot.docs[0].data();
-                        view.value = 'result';
-                        // อัปเดต URL
-                        if(typeof updateUrlHash === 'function') updateUrlHash(); 
-                    }
-                } catch (error) {
-                    console.error("Error Detail:", error); // ดู Error เต็มๆ ใน Console F12
+                    // 2. ลองค้นหา (รองรับทั้งตัวเลขและข้อความ)
+                    let snap = await studentsRef.where('studentId', '==', idStr).limit(1).get();
                     
-                    // เช็คว่าเป็นเรื่อง Index หรือไม่
-                    if (error.message && error.message.includes('index')) {
-                        alert('ระบบแจ้งเตือน: จำเป็นต้องสร้าง Index ใน Firebase Console (กรุณากด F12 เพื่อคลิกลิงก์สร้าง Index)');
+                    if (snap.empty && !isNaN(idNum)) {
+                         snap = await studentsRef.where('studentId', '==', idNum).limit(1).get();
+                    }
+
+                    // 3. ตรวจสอบผลลัพธ์
+                    if (snap.empty) {
+                        alert('Not Found: ไม่พบข้อมูลนักเรียนรหัสนี้');
                     } else {
-                        alert('เกิดข้อผิดพลาด: ' + error.message);
+                        const d = snap.docs[0].data();
+                        
+                        // เช็คสถานะ Published
+                        if (d.isPublished === false) { // เช็คแบบนี้ชัวร์กว่า !d.isPublished
+                            alert('Not Published: ผลการเรียนนี้ยังไม่ประกาศ');
+                        } else {
+                            // โหลดข้อมูลสำเร็จ
+                            studentResult.value = { id: snap.docs[0].id, ...d };
+                            
+                            // หุบเมนูวิชา
+                            if (studentResult.value.subjects) {
+                                studentResult.value.subjects.forEach(s => s.expanded = false);
+                            }
+                            
+                            view.value = 'result';
+                            
+                            // อัปเดต URL Hash (ถ้ามี)
+                            if (typeof updateUrlHash === 'function') updateUrlHash();
+                        }
+                    }
+                } catch (e) {
+                    console.error('Error:', e);
+                    if (e.code === 'permission-denied') {
+                        alert('Permission Error: กรุณาไปแก้ Firestore Rules ให้ตรงกับ Path ที่ใช้งาน');
+                    } else {
+                        alert('Error: ' + e.message);
                     }
                 } finally {
                     loading.value = false;
                 }
             };
+
 
 
 
