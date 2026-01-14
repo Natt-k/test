@@ -1405,34 +1405,45 @@ const focusPrevRow = (rowIdx, colIdx) => {
             const getGradeColor = (g) => g>=3?'bg-green-500':g>=2?'bg-yellow-400':g>=1?'bg-orange-400':'bg-red-500';
             const calculateGPA = (subs) => { if(!subs||!subs.length)return "0.00"; let p=0,c=0,w=false; subs.forEach(s=>{ if(s.hideFinal)w=true; let cr=parseFloat(s.credit)||1; p+=calculateGrade(calculateSubjectTotal(s))*cr; c+=cr; }); if(w)return "รอประกาศ"; return c?(p/c).toFixed(2):"0.00"; };
         // *** ฟังก์ชันที่เพิ่มใหม่ (ต้องอยู่นอก executeExport แต่อยู่ก่อน return) ***
+                                // --- วางโค้ดนี้ ก่อนบรรทัด return { ---
                 const printReport = () => {
+                    // ตรวจสอบว่าเลือกวิชาหรือยัง
                     const subName = selectedExportSubject.value;
                     if (!subName || subName === 'All') return alert('กรุณาเลือกรายวิชาที่จะพิมพ์ (ไม่สามารถพิมพ์ "ทุกรายวิชา" พร้อมกันได้)');
                     
                     const students = filteredStudents.value;
                     if (students.length === 0) return alert('ไม่พบข้อมูลนักเรียน');
 
+                    // ดึงข้อมูลส่วนหัว
                     const roomInfo = `ม.${currentRoom.value.level}/${currentRoom.value.room}`;
                     const teacherName = user.value?.email || '-'; 
                     let subjectCode = "-";
                     let subjectCredit = "-";
 
+                    // ตัวแปรนับเกรด
                     const gradeCount = { '4':0, '3.5':0, '3':0, '2.5':0, '2':0, '1.5':0, '1':0, '0':0, 'ร':0, 'มส':0 };
                     let totalStudents = 0;
 
+                    // เตรียมข้อมูลนักเรียนแต่ละคน
                     const rows = students.map((s, index) => {
                         const sub = s.subjects?.find(sb => sb.name === subName);
                         if (!sub) return null;
 
+                        // ดึงรหัสวิชาจากคนแรกที่มีข้อมูล
                         if(subjectCode === "-") subjectCode = sub.code || subName.split(' ')[0] || "-"; 
                         if(subjectCredit === "-") subjectCredit = sub.credit || "-";
 
-                        const unitScore = sub.units ? sub.units.reduce((acc, u) => acc + calcUnitTotal(u), 0) : 0;
+                        // คำนวณคะแนน
+                        const unitScore = sub.units ? sub.units.reduce((acc, u) => acc + (parseFloat(u.score) || 0), 0) : 0; // แก้ไขการดึงคะแนนเก็บ
+                        // หรือถ้าใช้ฟังก์ชันที่มีอยู่:
+                        // const unitScore = sub.units ? sub.units.reduce((acc, u) => acc + calcUnitTotal(u), 0) : 0;
+                        
                         const midScore = parseFloat(sub.midterm?.calcScore || 0);
                         const finScore = parseFloat(sub.final?.calcScore || 0);
                         const totalScore = calculateSubjectTotal(sub);
                         const grade = calculateGrade(totalScore);
 
+                        // นับจำนวนเกรด
                         if (gradeCount[grade] !== undefined) gradeCount[grade]++;
                         else gradeCount['0']++; 
                         totalStudents++;
@@ -1441,7 +1452,7 @@ const focusPrevRow = (rowIdx, colIdx) => {
                             no: s.number || (index + 1),
                             id: s.studentId,
                             name: `${s.prefix}${s.firstName}  ${s.lastName}`,
-                            unit: unitScore.toFixed(0),
+                            unit: (totalScore - midScore - finScore).toFixed(0), // คำนวณคะแนนเก็บย้อนกลับจากคะแนนรวม เพื่อความแม่นยำ
                             mid: midScore.toFixed(0),
                             fin: finScore.toFixed(0),
                             total: totalScore.toFixed(0),
@@ -1449,7 +1460,10 @@ const focusPrevRow = (rowIdx, colIdx) => {
                         };
                     }).filter(row => row !== null).sort((a,b) => parseInt(a.no) - parseInt(b.no));
 
+                    // สร้างหน้าต่างใหม่เพื่อสั่งพิมพ์
                     const printWindow = window.open('', '', 'width=900,height=600');
+                    if(!printWindow) return alert("Browser บล็อก Pop-up! กรุณากดอนุญาตที่แถบ URL ด้านบน");
+
                     printWindow.document.write(`
                         <html>
                         <head>
@@ -1487,7 +1501,7 @@ const focusPrevRow = (rowIdx, colIdx) => {
                                         <th style="width: 50px;">เลขที่</th>
                                         <th style="width: 100px;">รหัสประจำตัว</th>
                                         <th class="text-left">ชื่อ - สกุล</th>
-                                        <th style="width: 80px;">คะแนนเก็บ</th>
+                                        <th style="width: 80px;">คะแนนหน่วย</th>
                                         <th style="width: 80px;">กลางภาค</th>
                                         <th style="width: 80px;">ปลายภาค</th>
                                         <th style="width: 80px;">รวม</th>
@@ -1545,7 +1559,8 @@ const focusPrevRow = (rowIdx, colIdx) => {
                     printWindow.focus();
                     setTimeout(() => { printWindow.print(); printWindow.close(); }, 500);
                 };
-                // --- จบการ Copy ---
+                // --- จบโค้ด (บรรทัดต่อไปต้องเป็น return { ) ---
+
 
             return {
                 view, loading, loadingText, showRetry, forceStopLoading, user, isAdmin, searchId, studentResult, roomGroups, currentRoom, filteredStudents, modals, editingStudent, editingSubjects, isClassMode, selectedSyncRooms, syncAllRooms, studentForm, loginForm, selectedExportSubject, uniqueSubjectsInRoom, selectedBatchSubject, batchColumns, batchStudents,
